@@ -3,11 +3,14 @@
   window.addEventListener('DOMContentLoaded', async () => {
     await import('/pagefind/pagefind-ui.js');
     new PagefindUI({ element: '#search', showSubResults: true });
+    const input = document.querySelector('#search input');
+    if (input) input.setAttribute('aria-label', 'Search the site');
   });
 </script>
 <style is:global>
   #search {
     width: 220px;
+    min-height: 38px; /* reserve the input's height so the late-loading UI doesn't shift the page */
     position: relative;
     --pagefind-ui-primary: var(--accent);
     --pagefind-ui-text: rgb(var(--gray-dark));

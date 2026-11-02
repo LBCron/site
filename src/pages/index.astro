@@ -1,5 +1,8 @@
 ---
+import type { ImageMetadata } from 'astro';
+import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
+import readingTime from 'reading-time';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
@@ -7,9 +10,86 @@ import Header from '../components/Header.astro';
 import { SITE_META_DESCRIPTION, SITE_TITLE } from '../consts';
 import { excerpt } from '../utils/excerpt';
 
-const latest = (await getCollection('blog'))
-	.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
-	.slice(0, 3);
+const posts = (await getCollection('blog')).sort(
+	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
+);
+const [featured, ...rest] = posts;
+const recent = rest.slice(0, 3);
+
+// Share images live under public/ so the browser can fetch them by URL, but
+// importing them here lets Astro's image pipeline resize and re-encode the
+// copies used on the home page instead of shipping 1200x630 PNGs.
+const shareImages = import.meta.glob<{ default: ImageMetadata }>('/public/assets/*/link.png');
+const shareImage = async (path?: string) => {
+	if (!path) return null;
+	const loader = shareImages[`/public${path}`];
+	return loader ? (await loader()).default : null;
+};
+const featuredImage = await shareImage(featured?.data.image?.path);
+const recentImages = await Promise.all(recent.map((p) => shareImage(p.data.image?.path)));
+
+const minutes = (body?: string) => Math.max(1, Math.round(readingTime(body ?? '').minutes));
+
+// Tags are merged case-insensitively here (Azure/azure, API/api) because the
+// tag pages already share a lower-cased slug, so one chip per topic is right.
+const tagCounts = new Map<string, number>();
+for (const post of posts) {
+	for (const tag of post.data.tags ?? []) {
+		const key = tag.toLowerCase();
+		if (key === 'hungovercoders') continue;
+		tagCounts.set(key, (tagCounts.get(key) ?? 0) + 1);
+	}
+}
+const topics = [...tagCounts.entries()]
+	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+	.slice(0, 14);
+const slugify = (t: string) => t.toLowerCase().replace(/\s+/g, '-');
+
+const projects = (await getCollection('projects'))
+	.filter((p) => p.data.status === 'live')
+	.sort((a, b) => (a.data.order ?? 9999) - (b.data.order ?? 9999));
+const liveCount = projects.length;
+const hostFromUrl = (url: string) => {
+	try {
+		return new URL(url).host.replace(/^www\./, '');
+	} catch {
+		return url;
+	}
+};
+
+const lessons = await getCollection('training');
+const seriesMap = new Map<string, number>();
+for (const lesson of lessons) seriesMap.set(lesson.data.series, (seriesMap.get(lesson.data.series) ?? 0) + 1);
+const series = [...seriesMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+
+const firstYear = posts.at(-1)?.data.date.getFullYear() ?? new Date().getFullYear();
+
+const principles = [
+	{
+		title: 'Small, cheap, and yours beats big, fancy, and rented.',
+		body: 'Single binaries over JVM clusters. Static sites over CMS-as-a-service. Source-controlled config over click-ops.',
+	},
+	{
+		title: 'If one slightly hungover person can’t deploy it on a Tuesday, it’s too complicated.',
+		body: 'Operational simplicity is a feature, not a constraint. Saturday morning with a head on you counts too.',
+	},
+	{
+		title: 'Source control everything that has behaviour.',
+		body: 'Configs, infrastructure, dashboards, prompts. Especially prompts now. If it’s not in git, it doesn’t exist.',
+	},
+	{
+		title: 'Shift left until it hurts, then shift left some more.',
+		body: 'Tests, linting, security and observability at the developer’s keyboard, not in a pipeline three weeks downstream.',
+	},
+	{
+		title: 'AI is a power tool, not a magic wand.',
+		body: 'Use it for the boring bits: scaffolding, refactoring, the YAML you can’t be bothered to type. The model does the typing; you do the judgement.',
+	},
+	{
+		title: 'Boring tech that works beats exciting tech that nearly works.',
+		body: 'Be enthusiastic about tools but suspicious of hype. The “what I’d do differently” section is the honest bit.',
+	},
+];
 ---
 
 <!doctype html>
@@ -18,115 +98,733 @@ const latest = (await getCollection('blog'))
 		<BaseHead title={SITE_TITLE} description={SITE_META_DESCRIPTION} />
 		<style>
 			main {
-				width: 760px;
+				width: 1100px;
 				max-width: calc(100% - 2em);
+				padding-top: 1.5em;
 			}
-			.hero {
-				display: flex;
-				align-items: center;
-				gap: 2rem;
-				padding: 2.5rem 0 1rem;
-				border-bottom: 1px solid rgb(var(--gray-light));
-				margin-bottom: 2.5rem;
+
+			/* ---------- shared section bits ---------- */
+			.section {
+				margin-top: 4.5rem;
 			}
-			.hero-mark {
-				flex: 0 0 auto;
-				width: 140px;
-				height: 140px;
-				display: block;
-				filter: drop-shadow(0 8px 24px rgba(35, 55, 255, 0.15));
-			}
-			.hero-text h1 {
-				margin: 0 0 0.5rem;
-				line-height: 1;
-			}
-			.hero-text .tagline {
-				margin: 0;
-				color: rgb(var(--gray));
-				font-size: 1.05rem;
-				line-height: 1.5;
-			}
-			.intro p {
-				font-size: 1.05rem;
-				line-height: 1.65;
-			}
-			.intro strong {
-				color: rgb(var(--black));
-			}
-			.latest {
-				margin-top: 3.5rem;
-				padding-top: 2rem;
-				border-top: 1px solid rgb(var(--gray-light));
-			}
-			.latest-header {
+			.section-head {
 				display: flex;
 				justify-content: space-between;
-				align-items: baseline;
-				margin-bottom: 1.5rem;
+				align-items: flex-end;
+				gap: 1rem;
+				margin-bottom: 1.75rem;
 			}
-			.latest-header h2 {
+			.section-head h2 {
 				margin: 0;
-				font-size: 1.5rem;
+				font-size: 1.85rem;
 			}
-			.latest-header a {
+			.section-head p {
+				margin: 0.35rem 0 0;
+				color: rgb(var(--gray));
+				font-size: 1rem;
+			}
+			.eyebrow {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin: 0 0 0.75rem;
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--accent);
+			}
+			.eyebrow::before {
+				content: '';
+				width: 1.5rem;
+				height: 2px;
+				background: var(--accent);
+				border-radius: 2px;
+			}
+			.more {
+				flex: 0 0 auto;
 				color: var(--accent);
 				text-decoration: none;
-				font-size: 0.9rem;
+				font-size: 0.95rem;
+				font-weight: 700;
+				white-space: nowrap;
 			}
-			.latest-header a:hover {
+			.more:hover {
 				text-decoration: underline;
 			}
-			.latest-list {
+
+			/* ---------- hero ---------- */
+			.hero {
+				position: relative;
+				display: grid;
+				grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+				gap: 3rem;
+				align-items: center;
+				padding: 2.5rem 0 3rem;
+			}
+			.hero h1 {
+				margin: 0 0 1rem;
+				font-size: clamp(3rem, 7vw, 4.75rem);
+				line-height: 0.95;
+				letter-spacing: -0.03em;
+			}
+			.hero h1 span {
+				color: var(--accent);
+			}
+			.hero .lead {
+				margin: 0 0 1.75rem;
+				max-width: 34rem;
+				font-size: 1.2rem;
+				line-height: 1.6;
+				color: rgb(var(--gray-dark));
+			}
+			.hero .lead strong {
+				color: rgb(var(--black));
+			}
+			.cta {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.75rem 1rem;
+			}
+			.cta .btn {
+				font-size: 1rem;
+				padding: 0.7rem 1.3rem;
+				border-radius: 8px;
+				font-weight: 700;
+			}
+			.cta .quiet {
+				color: rgb(var(--gray));
+				text-decoration: none;
+				font-size: 0.95rem;
+			}
+			.cta .quiet:hover {
+				color: var(--accent);
+				text-decoration: underline;
+			}
+			.facts {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.6rem 2rem;
 				list-style: none;
-				padding: 0;
-				margin: 0;
+				margin: 2.25rem 0 0;
+				padding: 1.25rem 0 0;
+				border-top: 1px solid rgb(var(--gray-light));
+			}
+			.facts li {
 				display: flex;
 				flex-direction: column;
+				gap: 0.1rem;
 			}
-			.latest-list li {
-				border-top: 1px solid rgb(var(--gray-light));
-				padding: 1.5rem 0;
+			.facts strong {
+				font-family: var(--font-display);
+				font-size: 1.6rem;
+				line-height: 1.1;
+				color: rgb(var(--black));
 			}
-			.latest-list li:last-child {
-				border-bottom: 1px solid rgb(var(--gray-light));
+			.facts span {
+				font-size: 0.8rem;
+				text-transform: uppercase;
+				letter-spacing: 0.08em;
+				color: rgb(var(--gray));
 			}
-			.latest-list a {
-				display: block;
+
+			.hero-art {
+				position: relative;
+				aspect-ratio: 1;
+				max-width: 380px;
+				width: 100%;
+				justify-self: end;
+				display: grid;
+				place-items: center;
+				border-radius: 28px;
+				background:
+					radial-gradient(circle at 20% 15%, rgba(35, 55, 255, 0.18), transparent 45%),
+					radial-gradient(circle at 85% 80%, rgba(35, 55, 255, 0.14), transparent 50%),
+					rgb(var(--surface));
+				border: 1px solid rgb(var(--gray-light));
+				box-shadow: 0 30px 60px -30px rgba(35, 55, 255, 0.35);
+				overflow: hidden;
+			}
+			.hero-art img {
+				width: 62%;
+				height: auto;
+				border-radius: 18%;
+				position: relative;
+				z-index: 1;
+				filter: drop-shadow(0 12px 24px rgba(35, 55, 255, 0.2));
+			}
+			.bubbles {
+				position: absolute;
+				inset: 0;
+				width: 100%;
+				height: 100%;
+				color: var(--accent);
+				opacity: 0.5;
+			}
+			.bubbles circle {
+				fill: none;
+				stroke: currentColor;
+				stroke-width: 1.5;
+				animation: rise 9s ease-in-out infinite;
+				transform-origin: center;
+			}
+			.bubbles circle:nth-child(2) {
+				animation-delay: -3s;
+				animation-duration: 11s;
+			}
+			.bubbles circle:nth-child(3) {
+				animation-delay: -6s;
+				animation-duration: 13s;
+			}
+			.bubbles circle:nth-child(4) {
+				animation-delay: -1.5s;
+				animation-duration: 10s;
+			}
+			.bubbles circle:nth-child(5) {
+				animation-delay: -8s;
+				animation-duration: 12s;
+			}
+			@keyframes rise {
+				0% {
+					transform: translateY(14px);
+					opacity: 0;
+				}
+				20% {
+					opacity: 1;
+				}
+				80% {
+					opacity: 1;
+				}
+				100% {
+					transform: translateY(-24px);
+					opacity: 0;
+				}
+			}
+			@media (prefers-reduced-motion: reduce) {
+				.bubbles circle {
+					animation: none;
+				}
+			}
+			[data-theme='dark'] .hero-art {
+				background:
+					radial-gradient(circle at 20% 15%, rgba(138, 150, 255, 0.22), transparent 45%),
+					radial-gradient(circle at 85% 80%, rgba(138, 150, 255, 0.14), transparent 50%),
+					rgb(var(--surface));
+			}
+			[data-theme='dark'] .hero-art img {
+				filter: invert(1) drop-shadow(0 12px 24px rgba(138, 150, 255, 0.25));
+			}
+
+			/* ---------- manifesto band ---------- */
+			.band {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 1.25rem 1.75rem;
+				align-items: center;
+				padding: 1.5rem 2rem;
+				border-radius: 16px;
+				background: var(--accent);
+				color: #fff;
+			}
+			.band svg {
+				width: 44px;
+				height: 44px;
+				flex: 0 0 auto;
+			}
+			.band p {
+				margin: 0;
+			}
+			.band .quote {
+				font-family: var(--font-display);
+				font-size: 1.45rem;
+				line-height: 1.3;
+				font-weight: 700;
+			}
+			.band .sub {
+				margin-top: 0.35rem;
+				font-size: 0.98rem;
+				opacity: 0.92;
+			}
+			[data-theme='dark'] .band {
+				background: #2337ff;
+			}
+
+			/* ---------- posts ---------- */
+			.featured {
+				display: grid;
+				grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+				gap: 0;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 18px;
+				overflow: hidden;
+				background: rgb(var(--surface));
 				color: inherit;
 				text-decoration: none;
+				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
 			}
-			.latest-list .date {
-				color: rgb(var(--gray));
+			.featured:hover {
+				border-color: var(--accent);
+				box-shadow: 0 24px 48px -28px rgba(35, 55, 255, 0.45);
+				transform: translateY(-2px);
+				text-decoration: none;
+			}
+			.featured img,
+			.featured .ph {
+				display: block;
+				width: 100%;
+				height: 100%;
+				min-height: 260px;
+				object-fit: cover;
+				object-position: left center;
+				border-radius: 0;
+			}
+			.featured .ph {
+				background: linear-gradient(135deg, #0f1219, #1a2250 70%, #2337ff);
+			}
+			.featured-body {
+				padding: 2rem 2.25rem;
+				display: flex;
+				flex-direction: column;
+				justify-content: center;
+			}
+			.meta {
+				display: flex;
+				flex-wrap: wrap;
+				align-items: center;
+				gap: 0.5rem 0.75rem;
+				margin: 0 0 0.75rem;
 				font-size: 0.78rem;
 				text-transform: uppercase;
-				letter-spacing: 1px;
-				margin: 0 0 0.35rem;
+				letter-spacing: 0.08em;
+				color: rgb(var(--gray));
 			}
-			.latest-list h3 {
-				margin: 0 0 0.4rem;
-				font-size: 1.25rem;
-				line-height: 1.3;
+			.meta .pill {
+				padding: 0.15rem 0.6rem;
+				border-radius: 999px;
+				background: rgba(35, 55, 255, 0.1);
+				color: var(--accent);
+				font-weight: 700;
+				letter-spacing: 0.06em;
+			}
+			.meta .dot::before {
+				content: '\00b7';
+			}
+			.featured h3 {
+				margin: 0 0 0.75rem;
+				font-size: 1.85rem;
+				line-height: 1.15;
 				color: rgb(var(--black));
 				transition: color 0.15s ease;
 			}
-			.latest-list a:hover h3 {
+			.featured:hover h3 {
 				color: var(--accent);
 			}
-			.latest-list .desc {
+			.featured .desc {
+				margin: 0 0 1.25rem;
+				color: rgb(var(--gray-dark));
+				font-size: 1.02rem;
+				line-height: 1.55;
+			}
+			.readmore {
+				margin: 0;
+				font-weight: 700;
+				color: var(--accent);
+				font-size: 0.95rem;
+			}
+
+			.post-grid {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1.5rem;
+				list-style: none;
+				margin: 1.5rem 0 0;
+				padding: 0;
+			}
+			.post-card {
+				display: flex;
+				flex-direction: column;
+				height: 100%;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 14px;
+				overflow: hidden;
+				background: rgb(var(--surface));
+				color: inherit;
+				text-decoration: none;
+				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
+			}
+			.post-card:hover {
+				border-color: var(--accent);
+				box-shadow: 0 18px 36px -24px rgba(35, 55, 255, 0.4);
+				transform: translateY(-2px);
+				text-decoration: none;
+			}
+			.post-card img,
+			.post-card .ph {
+				display: block;
+				width: 100%;
+				aspect-ratio: 1200 / 630;
+				height: auto;
+				object-fit: cover;
+				border-radius: 0;
+			}
+			.post-card .ph {
+				background: linear-gradient(135deg, #0f1219, #1a2250 70%, #2337ff);
+			}
+			.post-card-body {
+				padding: 1.25rem 1.35rem 1.4rem;
+				display: flex;
+				flex-direction: column;
+				flex: 1;
+			}
+			.post-card h3 {
+				margin: 0 0 0.5rem;
+				font-size: 1.2rem;
+				line-height: 1.25;
+				color: rgb(var(--black));
+				transition: color 0.15s ease;
+			}
+			.post-card:hover h3 {
+				color: var(--accent);
+			}
+			.post-card .desc {
+				margin: 0;
+				color: rgb(var(--gray-dark));
+				font-size: 0.92rem;
+				line-height: 1.5;
+			}
+
+			/* ---------- topics ---------- */
+			.topics {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.6rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.topics a {
+				display: inline-flex;
+				align-items: baseline;
+				gap: 0.45rem;
+				padding: 0.5rem 0.95rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 999px;
+				background: rgb(var(--surface));
+				color: rgb(var(--gray-dark));
+				text-decoration: none;
+				font-size: 0.95rem;
+				transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+			}
+			.topics a:hover {
+				border-color: var(--accent);
+				color: var(--accent);
+				text-decoration: none;
+			}
+			.topics .count {
+				font-family: var(--font-mono);
+				font-size: 0.72rem;
+				color: rgb(var(--gray));
+			}
+
+			/* ---------- projects ---------- */
+			.project-grid {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 1.25rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.project {
+				display: block;
+				height: 100%;
+				box-sizing: border-box;
+				padding: 1.5rem 1.6rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-left: 4px solid var(--accent);
+				border-radius: 14px;
+				background: rgb(var(--surface));
+				color: inherit;
+				text-decoration: none;
+				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
+			}
+			.project:hover {
+				border-color: var(--accent);
+				box-shadow: 0 18px 36px -24px rgba(35, 55, 255, 0.4);
+				transform: translateY(-2px);
+				text-decoration: none;
+			}
+			.project-head {
+				display: flex;
+				justify-content: space-between;
+				align-items: baseline;
+				gap: 1rem;
+				margin-bottom: 0.5rem;
+			}
+			.project h3 {
+				margin: 0;
+				font-size: 1.3rem;
+				color: rgb(var(--black));
+				transition: color 0.15s ease;
+			}
+			.project:hover h3 {
+				color: var(--accent);
+			}
+			.project .host {
+				margin: 0;
+				font-family: var(--font-mono);
+				font-size: 0.78rem;
+				color: rgb(var(--gray));
+				white-space: nowrap;
+			}
+			.project .desc {
+				margin: 0;
 				color: rgb(var(--gray-dark));
 				font-size: 0.95rem;
 				line-height: 1.5;
+			}
+			.project .tags {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.3rem;
+				margin-top: 0.85rem;
+			}
+			.project .tag {
+				font-size: 0.68rem;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				padding: 0.15rem 0.55rem;
+				border: 1px solid rgb(var(--gray-light));
+				color: rgb(var(--gray));
+				border-radius: 999px;
+			}
+
+			/* ---------- training ---------- */
+			.series-grid {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1.25rem;
+				list-style: none;
 				margin: 0;
+				padding: 0;
+			}
+			.series-grid a {
+				display: block;
+				padding: 1.25rem 1.4rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 14px;
+				background: rgb(var(--surface));
+				text-decoration: none;
+				color: inherit;
+				transition: border-color 0.15s ease;
+			}
+			.series-grid a:hover {
+				border-color: var(--accent);
+			}
+			.series-grid h3 {
+				margin: 0 0 0.2rem;
+				font-size: 1.15rem;
+				text-transform: capitalize;
+				color: rgb(var(--black));
+			}
+			.series-grid p {
+				margin: 0;
+				color: rgb(var(--gray));
+				font-size: 0.9rem;
+			}
+
+			/* ---------- principles ---------- */
+			.principles {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1.5rem 2rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				counter-reset: principle;
+			}
+			.principles li {
+				counter-increment: principle;
+				padding-top: 1rem;
+				border-top: 2px solid rgb(var(--gray-light));
+			}
+			.principles li::before {
+				content: counter(principle, decimal-leading-zero);
+				display: block;
+				font-family: var(--font-mono);
+				font-size: 0.78rem;
+				letter-spacing: 0.1em;
+				color: var(--accent);
+				margin-bottom: 0.6rem;
+			}
+			.principles h3 {
+				margin: 0 0 0.5rem;
+				font-size: 1.15rem;
+				line-height: 1.3;
+				color: rgb(var(--black));
+			}
+			.principles p {
+				margin: 0;
+				font-size: 0.95rem;
+				line-height: 1.55;
+				color: rgb(var(--gray-dark));
+			}
+
+			/* ---------- about + colophon ---------- */
+			.about {
+				display: grid;
+				grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+				gap: 2rem;
+			}
+			.about-card,
+			.colophon {
+				padding: 2rem 2.25rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 18px;
+				background: rgb(var(--surface));
+			}
+			.about-card {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 1.75rem;
+				align-items: start;
+			}
+			.about-card img {
+				width: 104px;
+				height: 104px;
+				object-fit: cover;
+				object-position: center top;
+				border-radius: 50%;
+				border: 3px solid var(--accent);
+			}
+			.about-card h2,
+			.colophon h2 {
+				margin: 0 0 0.6rem;
+				font-size: 1.5rem;
+			}
+			.about-card p,
+			.colophon p {
+				margin: 0 0 0.9rem;
+				font-size: 1rem;
+				line-height: 1.6;
+				color: rgb(var(--gray-dark));
+			}
+			.about-card p:last-child,
+			.colophon p:last-child {
+				margin-bottom: 0;
+			}
+			.stack {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.5rem;
+				list-style: none;
+				margin: 1rem 0 0;
+				padding: 0;
+			}
+			.stack li a,
+			.stack li span {
+				display: inline-block;
+				padding: 0.35rem 0.75rem;
+				border-radius: 8px;
+				background: rgb(var(--gray-light));
+				color: rgb(var(--gray-dark));
+				font-family: var(--font-mono);
+				font-size: 0.78rem;
+				text-decoration: none;
+			}
+			.stack li a:hover {
+				color: var(--accent);
+			}
+			[data-theme='dark'] .meta .pill {
+				background: rgba(138, 150, 255, 0.16);
+			}
+
+			/* ---------- responsive ---------- */
+			@media (max-width: 960px) {
+				.hero {
+					grid-template-columns: 1fr;
+					gap: 2rem;
+				}
+				.hero-art {
+					justify-self: start;
+					max-width: 280px;
+				}
+				.post-grid,
+				.principles,
+				.series-grid {
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+				}
+				.about {
+					grid-template-columns: 1fr;
+				}
 			}
 			@media (max-width: 720px) {
-				.hero {
-					flex-direction: column;
-					text-align: center;
-					gap: 1.25rem;
+				main {
+					padding-top: 0.5em;
 				}
-				.hero-mark {
-					width: 100px;
-					height: 100px;
+				.section {
+					margin-top: 3.25rem;
+				}
+				.hero {
+					padding: 1.5rem 0 2rem;
+				}
+				.hero .lead {
+					font-size: 1.08rem;
+				}
+				.hero-art {
+					max-width: 220px;
+					justify-self: center;
+					order: -1;
+				}
+				.facts {
+					gap: 0.75rem 1.5rem;
+				}
+				.facts strong {
+					font-size: 1.35rem;
+				}
+				.band {
+					grid-template-columns: 1fr;
+					padding: 1.4rem 1.5rem;
+				}
+				.band svg {
+					display: none;
+				}
+				.band .quote {
+					font-size: 1.25rem;
+				}
+				.featured {
+					grid-template-columns: 1fr;
+				}
+				.featured img,
+				.featured .ph {
+					min-height: 0;
+					aspect-ratio: 1200 / 630;
+					height: auto;
+				}
+				.featured-body {
+					padding: 1.5rem 1.4rem;
+				}
+				.featured h3 {
+					font-size: 1.5rem;
+				}
+				.post-grid,
+				.project-grid,
+				.principles,
+				.series-grid {
+					grid-template-columns: 1fr;
+				}
+				.section-head {
+					flex-direction: column;
+					align-items: flex-start;
+					gap: 0.5rem;
+				}
+				.about-card {
+					grid-template-columns: 1fr;
+				}
+				.about-card,
+				.colophon {
+					padding: 1.5rem 1.4rem;
 				}
 			}
 		</style>
@@ -134,65 +832,246 @@ const latest = (await getCollection('blog'))
 	<body>
 		<Header />
 		<main id="main-content">
-			<section class="hero">
-				<img class="hero-mark" src="/icon-512.png" alt="" width="140" height="140" />
+			<section class="hero" aria-labelledby="hero-title">
 				<div class="hero-text">
-					<h1>hungovercoders</h1>
-					<p class="tagline">
-						Folk tales of working in tech from the South Wales valleys. Built with the AI on the
-						team and the dog on the sofa.
+					<p class="eyebrow">Folk tales of working in tech</p>
+					<h1 id="hero-title">hungover<span>coders</span></h1>
+					<p class="lead">
+						Honest walkthroughs from the South Wales valleys: data pipelines, cloud infrastructure,
+						APIs, DevOps tooling, and a lot of working alongside AI agents. <strong
+							>Built with the AI on the team and the dog on the sofa.</strong
+						>
+					</p>
+					<div class="cta">
+						<a class="btn btn--primary" href="/blog">Read the blog</a>
+						<a class="btn" href="/projects">See the projects</a>
+						<a class="quiet" href="/about">Who is dataGriff? &rarr;</a>
+					</div>
+					<ul class="facts" aria-label="Site at a glance">
+						<li><strong>{posts.length}</strong><span>posts since {firstYear}</span></li>
+						<li><strong>{liveCount}</strong><span>live projects</span></li>
+						<li><strong>0</strong><span>cookies set</span></li>
+						<li><strong>1</strong><span>dog on the sofa</span></li>
+					</ul>
+				</div>
+				<div class="hero-art" aria-hidden="true">
+					<svg class="bubbles" viewBox="0 0 100 100" preserveAspectRatio="none" focusable="false">
+						<circle cx="18" cy="78" r="3" />
+						<circle cx="82" cy="24" r="4.5" />
+						<circle cx="70" cy="86" r="2.2" />
+						<circle cx="26" cy="22" r="2.6" />
+						<circle cx="88" cy="60" r="1.8" />
+					</svg>
+					<img src="/icon-512.png" alt="" width="512" height="512" fetchpriority="high" />
+				</div>
+			</section>
+
+			<section class="band" aria-label="The worldview in one sentence">
+				<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+					<path fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" d="M7 10h9a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H8a1 1 0 0 1-1-1v-9zm10 2h1.5a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2H17M7 10a2.5 2.5 0 0 1 .5-4.9A3 3 0 0 1 13 4a3 3 0 0 1 4.5 2.6A2.2 2.2 0 0 1 16 10M10 13v4m3-4v4" />
+				</svg>
+				<div>
+					<p class="quote">Small, cheap, and yours beats big, fancy, and rented.</p>
+					<p class="sub">
+						If one slightly hungover person can&rsquo;t deploy it on a Tuesday, it&rsquo;s too complicated.
+						Every post here is quietly making that argument.
 					</p>
 				</div>
 			</section>
 
-			<section class="intro">
-				<p>
-					I wanted a single place on the internet that was mine. Source-controlled, cheap to run,
-					honest about how it works. The kind of tech blog you'd write if you didn't have to
-					impress anyone. Just help a fellow hungovercoder get something working before the next
-					round.
-				</p>
-				<p>
-					The posts are walkthroughs of things I actually built: data pipelines, cloud
-					infrastructure, APIs, DevOps tooling, and these days a lot of working alongside AI agents.
-					Not theoretical. Not sanitised. Some written on a Friday night, most polished on a Sunday
-					morning with the dog asleep on the sofa. The code ran on my laptop first.
-				</p>
-				<p>
-					The worldview, if you want it in one sentence: <strong>small, cheap, and yours beats big,
-					fancy, and rented.</strong> If one slightly hungover person can't deploy it on a Tuesday,
-					or a Saturday morning with a head on them, it's too complicated.
-				</p>
-				<p>
-					AI is on the team now. Claude Code (and friends) does the typing; I do the judgement. The
-					blog is what comes out the other side: what I built, what I rewrote, what I'd do
-					differently. The opinion's still mine.
-				</p>
+			<section class="section" aria-labelledby="latest-title">
+				<div class="section-head">
+					<div>
+						<p class="eyebrow">Fresh from the keg</p>
+						<h2 id="latest-title">Latest writing</h2>
+						<p>Walkthroughs of things I actually built, including the bits that didn&rsquo;t go to plan.</p>
+					</div>
+					<a class="more" href="/blog">All {posts.length} posts &rarr;</a>
+				</div>
+
+				{featured && (
+					<a class="featured" href={`/blog/${featured.id}/`}>
+						{featuredImage ? (
+							<Image
+								src={featuredImage}
+								alt=""
+								widths={[480, 720, 960]}
+								sizes="(max-width: 720px) 100vw, 600px"
+								loading="eager"
+								fetchpriority="high"
+							/>
+						) : (
+							<div class="ph" />
+						)}
+						<div class="featured-body">
+							<p class="meta">
+								<span class="pill">Latest</span>
+								<FormattedDate date={featured.data.date} />
+								<span class="dot" aria-hidden="true" />
+								<span>{minutes(featured.body)} min read</span>
+							</p>
+							<h3>{featured.data.title}</h3>
+							<p class="desc">{excerpt(featured.body, 200) || featured.data.description}</p>
+							<p class="readmore">Read the post &rarr;</p>
+						</div>
+					</a>
+				)}
+
+				<ul class="post-grid">
+					{recent.map((post, i) => (
+						<li>
+							<a class="post-card" href={`/blog/${post.id}/`}>
+								{recentImages[i] ? (
+									<Image
+										src={recentImages[i]!}
+										alt=""
+										widths={[360, 540, 720]}
+										sizes="(max-width: 720px) 100vw, (max-width: 960px) 50vw, 350px"
+										loading="lazy"
+									/>
+								) : (
+									<div class="ph" />
+								)}
+								<div class="post-card-body">
+									<p class="meta">
+										<FormattedDate date={post.data.date} />
+										<span class="dot" aria-hidden="true" />
+										<span>{minutes(post.body)} min read</span>
+									</p>
+									<h3>{post.data.title}</h3>
+									<p class="desc">{excerpt(post.body, 150) || post.data.description}</p>
+								</div>
+							</a>
+						</li>
+					))}
+				</ul>
 			</section>
 
-			<section class="latest">
-				<div class="latest-header">
-					<h2>Latest from the blog</h2>
-					<a href="/blog">All posts &rarr;</a>
+			<section class="section" aria-labelledby="topics-title">
+				<div class="section-head">
+					<div>
+						<p class="eyebrow">Browse by topic</p>
+						<h2 id="topics-title">What gets written about</h2>
+					</div>
+					<a class="more" href="/tags">All tags &rarr;</a>
 				</div>
-				<ul class="latest-list">
-					{
-						latest.map((post) => {
-							const blurb = excerpt(post.body, 180) || post.data.description;
-							return (
-								<li>
-									<a href={`/blog/${post.id}/`}>
-										<p class="date">
-											<FormattedDate date={post.data.date} />
-										</p>
-										<h3>{post.data.title}</h3>
-										<p class="desc">{blurb}</p>
-									</a>
-								</li>
-							);
-						})
-					}
+				<ul class="topics">
+					{topics.map(([tag, count]) => (
+						<li>
+							<a href={`/tags/${slugify(tag)}/`}>
+								{tag}
+								<span class="count">{count}</span>
+							</a>
+						</li>
+					))}
 				</ul>
+			</section>
+
+			{projects.length > 0 && (
+				<section class="section" aria-labelledby="projects-title">
+					<div class="section-head">
+						<div>
+							<p class="eyebrow">Live on the internet</p>
+							<h2 id="projects-title">Projects</h2>
+							<p>Apps and tools built alongside the writing. All small, all cheap, all mine.</p>
+						</div>
+						<a class="more" href="/projects">All projects &rarr;</a>
+					</div>
+					<ul class="project-grid">
+						{projects.map((p) => (
+							<li>
+								<a class="project" href={p.data.url ?? '/projects'} target={p.data.url ? '_blank' : undefined} rel={p.data.url ? 'noopener' : undefined}>
+									<div class="project-head">
+										<h3>{p.data.title}</h3>
+										{p.data.url && <p class="host">{hostFromUrl(p.data.url)}</p>}
+									</div>
+									<p class="desc">{p.data.description}</p>
+									{p.data.tags && p.data.tags.length > 0 && (
+										<div class="tags">
+											{p.data.tags.map((t) => (
+												<span class="tag">{t}</span>
+											))}
+										</div>
+									)}
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+
+			{series.length > 0 && (
+				<section class="section" aria-labelledby="training-title">
+					<div class="section-head">
+						<div>
+							<p class="eyebrow">Learn by doing</p>
+							<h2 id="training-title">Training</h2>
+						</div>
+						<a class="more" href="/training">All series &rarr;</a>
+					</div>
+					<ul class="series-grid">
+						{series.map(([name, count]) => (
+							<li>
+								<a href={`/training/${name}/`}>
+									<h3>{name}</h3>
+									<p>{count} lessons</p>
+								</a>
+							</li>
+						))}
+					</ul>
+				</section>
+			)}
+
+			<section class="section" aria-labelledby="principles-title">
+				<div class="section-head">
+					<div>
+						<p class="eyebrow">The worldview</p>
+						<h2 id="principles-title">Six things every post is arguing</h2>
+						<p>Opinions a model couldn&rsquo;t form. I&rsquo;ve been wrong about half of them, which is the useful bit.</p>
+					</div>
+				</div>
+				<ol class="principles">
+					{principles.map((p) => (
+						<li>
+							<h3>{p.title}</h3>
+							<p>{p.body}</p>
+						</li>
+					))}
+				</ol>
+			</section>
+
+			<section class="section about" aria-label="About the author and this site">
+				<div class="about-card">
+					<img src="/assets/datagriff.png" alt="dataGriff portrait" width="104" height="104" loading="lazy" />
+					<div>
+						<h2>Who writes this</h2>
+						<p>
+							I&rsquo;m dataGriff, a forty-something working developer from the South Wales valleys. Data
+							engineering, DevOps, and anything involving making systems smaller, cheaper, and more yours.
+						</p>
+						<p>
+							AI is on the team now. Claude Code (and friends) does the typing; I do the judgement. When AI
+							helped, I say so. The opinion is still mine.
+						</p>
+						<p><a href="/about">More about dataGriff &rarr;</a></p>
+					</div>
+				</div>
+				<div class="colophon">
+					<h2>How this site is brewed</h2>
+					<p>
+						Source-controlled, cheap to run, honest about how it works. No cookies, no trackers, just a
+						cookieless visit counter.
+					</p>
+					<ul class="stack" aria-label="Built with">
+						<li><a href="https://astro.build" target="_blank" rel="noopener">Astro</a></li>
+						<li><a href="https://workers.cloudflare.com" target="_blank" rel="noopener">Cloudflare Workers</a></li>
+						<li><a href="https://pagefind.app" target="_blank" rel="noopener">Pagefind</a></li>
+						<li><a href="https://slopstopper.dev" target="_blank" rel="noopener">slopstopper</a></li>
+						<li><a href="https://github.com/hungovercoders/site" target="_blank" rel="noopener">Source on GitHub</a></li>
+						<li><a href="/rss.xml">RSS</a></li>
+						<li><a href="/llms.txt">llms.txt</a></li>
+					</ul>
+				</div>
 			</section>
 		</main>
 		<Footer />

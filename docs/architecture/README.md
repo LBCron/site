@@ -13,7 +13,7 @@ How the site is put together.
 
 ```
 src/
-  components/        BaseHead, Header, Footer, Search
+  components/        BaseHead, Header, Footer, SocialLinks, Search
   content/blog/      Blog posts (YYYY-MM-DD-slug.md)
   content/projects/  Live project entries
   content.config.ts  Astro content-collection schemas
@@ -37,6 +37,12 @@ Lesson markdown lives canonically in sibling `learn.*` repos. The Astro glob loa
 - **Local dev:** run `./scripts/link-local-repos.sh` once after cloning. It auto-discovers `learn.*` sibling directories and symlinks them into `training-repos/`.
 
 To add a new training series: create `learn.<topic>` following the `content/` + `examples/` layout, then add `"learn.<topic>"` to the `REPOS` array in `scripts/fetch-training-repos.sh`. `link-local-repos.sh` picks it up automatically.
+
+## Home page
+
+`src/pages/index.astro` is assembled from the content collections at build time: the latest post is featured with its share image, the next three follow as cards, topics are the most-used blog tags (merged case-insensitively, matching the lower-cased `/tags/<slug>/` routes), and projects are the `live` entries. Training series only render when the collection has content.
+
+The share images under `public/assets/<slug>/link.png` are imported through `import.meta.glob` so Astro's image pipeline can emit resized WebP copies for the home page instead of the 1200x630 PNGs. That needs `imageService: 'compile'` on the Cloudflare adapter in `astro.config.mjs`; without it the adapter falls back to a no-op service and ships the PNGs untouched. The glob also copies every matched PNG into `dist/client/_astro/`, which is a few megabytes of unused duplicates per build but harmless.
 
 ## Search
 

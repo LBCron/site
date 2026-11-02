@@ -66,5 +66,5 @@ export default defineConfig({
       },
 	],
 
-  adapter: cloudflare({ prerenderEnvironment: 'node' }),
+  adapter: cloudflare({ prerenderEnvironment: 'node', imageService: 'compile' }),
 });

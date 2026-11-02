@@ -37,6 +37,11 @@
 [data-theme='dark'] body {
 	background-color: rgb(var(--surface));
 }
+[data-theme='dark'] .btn--primary,
+[data-theme='dark'] .btn--primary:hover,
+[data-theme='dark'] .skip-link {
+	color: rgb(var(--surface));
+}
 [data-theme='dark'] tbody tr:nth-child(even) {
 	background: rgba(255, 255, 255, 0.02);
 }
