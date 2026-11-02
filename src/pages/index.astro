@@ -1,5 +1,4 @@
 ---
-import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
@@ -8,7 +7,7 @@ import Header from '../components/Header.astro';
 import PostCard from '../components/PostCard.astro';
 import { SITE_META_DESCRIPTION, SITE_TITLE } from '../consts';
 import { excerpt } from '../utils/excerpt';
-import { minutesToRead, shareImage, tagSlug } from '../utils/posts';
+import { minutesToRead, tagSlug, visibleTags } from '../utils/posts';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -16,8 +15,7 @@ const posts = (await getCollection('blog')).sort(
 const [featured, ...rest] = posts;
 const recent = rest.slice(0, 3);
 
-const featuredImage = await shareImage(featured?.data.image?.path);
-const recentImages = await Promise.all(recent.map((p) => shareImage(p.data.image?.path)));
+const featuredTags = visibleTags(featured?.data.tags).slice(0, 4);
 
 // Tags are merged case-insensitively here (Azure/azure, API/api) because the
 // tag pages already share a lower-cased slug, so one chip per topic is right.
@@ -340,41 +338,51 @@ const principles = [
 
 			/* ---------- posts ---------- */
 			.featured {
+				position: relative;
 				display: grid;
-				grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-				gap: 0;
-				border: 1px solid rgb(var(--gray-light));
+				grid-template-columns: minmax(0, 1fr) auto;
+				gap: 2rem;
+				align-items: end;
+				padding: 2.25rem 2.5rem;
 				border-radius: 18px;
 				overflow: hidden;
-				background: rgb(var(--surface));
-				color: inherit;
+				color: #fff;
+				background:
+					radial-gradient(circle at 85% 20%, rgba(35, 55, 255, 0.55), transparent 45%),
+					radial-gradient(circle at 10% 110%, rgba(35, 55, 255, 0.35), transparent 50%),
+					linear-gradient(135deg, #0f1219, #141b3a 60%, #1a2250);
+				border: 1px solid rgba(138, 150, 255, 0.25);
 				text-decoration: none;
-				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
+				transition: box-shadow 0.2s ease, transform 0.2s ease;
+			}
+			.featured::before {
+				content: '';
+				position: absolute;
+				left: 0;
+				top: 0;
+				bottom: 0;
+				width: 5px;
+				background: #2337ff;
 			}
 			.featured:hover {
-				border-color: var(--accent);
-				box-shadow: 0 24px 48px -28px rgba(35, 55, 255, 0.45);
+				box-shadow: 0 30px 60px -30px rgba(35, 55, 255, 0.7);
 				transform: translateY(-2px);
 				text-decoration: none;
 			}
-			.featured img,
-			.featured .ph {
-				display: block;
-				width: 100%;
-				height: 100%;
-				min-height: 260px;
-				object-fit: cover;
-				object-position: left center;
+			.featured .mark {
+				position: absolute;
+				right: -2%;
+				top: -12%;
+				width: 46%;
+				max-width: 360px;
+				height: auto;
+				opacity: 0.07;
+				pointer-events: none;
+				filter: invert(1);
 				border-radius: 0;
 			}
-			.featured .ph {
-				background: linear-gradient(135deg, #0f1219, #1a2250 70%, #2337ff);
-			}
 			.featured-body {
-				padding: 2rem 2.25rem;
-				display: flex;
-				flex-direction: column;
-				justify-content: center;
+				position: relative;
 			}
 			.meta {
 				display: flex;
@@ -387,6 +395,9 @@ const principles = [
 				letter-spacing: 0.08em;
 				color: rgb(var(--gray));
 			}
+			.featured .meta {
+				color: rgba(255, 255, 255, 0.7);
+			}
 			.meta .pill {
 				padding: 0.15rem 0.6rem;
 				border-radius: 999px;
@@ -395,32 +406,59 @@ const principles = [
 				font-weight: 700;
 				letter-spacing: 0.06em;
 			}
+			.featured .meta .pill {
+				background: #2337ff;
+				color: #fff;
+			}
 			.meta .dot::before {
 				content: '\00b7';
 			}
 			.featured h3 {
 				margin: 0 0 0.75rem;
-				font-size: 1.85rem;
-				line-height: 1.15;
-				color: rgb(var(--black));
-				transition: color 0.15s ease;
-			}
-			.featured:hover h3 {
-				color: var(--accent);
+				max-width: 20ch;
+				font-size: clamp(1.6rem, 3vw, 2.3rem);
+				line-height: 1.12;
+				color: #fff;
 			}
 			.featured .desc {
-				margin: 0 0 1.25rem;
-				color: rgb(var(--gray-dark));
+				margin: 0;
+				max-width: 60ch;
+				color: rgba(255, 255, 255, 0.82);
 				font-size: 1.02rem;
 				line-height: 1.55;
 			}
-			.readmore {
-				margin: 0;
-				font-weight: 700;
-				color: var(--accent);
-				font-size: 0.95rem;
+			.featured .tags {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 0.3rem;
+				list-style: none;
+				margin: 1.25rem 0 0;
+				padding: 0;
 			}
-
+			.featured .tags li {
+				font-size: 0.68rem;
+				text-transform: uppercase;
+				letter-spacing: 0.06em;
+				padding: 0.15rem 0.55rem;
+				border: 1px solid rgba(255, 255, 255, 0.25);
+				color: rgba(255, 255, 255, 0.75);
+				border-radius: 999px;
+			}
+			.readmore {
+				position: relative;
+				margin: 0;
+				padding: 0.7rem 1.2rem;
+				border-radius: 8px;
+				background: #fff;
+				color: #0f1219;
+				font-weight: 700;
+				font-size: 0.95rem;
+				white-space: nowrap;
+			}
+			.featured:hover .readmore {
+				background: #2337ff;
+				color: #fff;
+			}
 			.post-grid {
 				display: grid;
 				grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -730,18 +768,17 @@ const principles = [
 				}
 				.featured {
 					grid-template-columns: 1fr;
+					gap: 1.25rem;
+					padding: 1.6rem 1.4rem;
+					align-items: start;
 				}
-				.featured img,
-				.featured .ph {
-					min-height: 0;
-					aspect-ratio: 1200 / 630;
-					height: auto;
+				.featured .mark {
+					width: 60%;
+					right: -15%;
+					top: -5%;
 				}
-				.featured-body {
-					padding: 1.5rem 1.4rem;
-				}
-				.featured h3 {
-					font-size: 1.5rem;
+				.readmore {
+					justify-self: start;
 				}
 				.post-grid,
 				.project-grid,
@@ -826,18 +863,7 @@ const principles = [
 
 				{featured && (
 					<a class="featured" href={`/blog/${featured.id}/`}>
-						{featuredImage ? (
-							<Image
-								src={featuredImage}
-								alt=""
-								widths={[480, 720, 960]}
-								sizes="(max-width: 720px) 100vw, 600px"
-								loading="eager"
-								fetchpriority="high"
-							/>
-						) : (
-							<div class="ph" />
-						)}
+						<img class="mark" src="/icon-512.png" alt="" width="512" height="512" loading="lazy" />
 						<div class="featured-body">
 							<p class="meta">
 								<span class="pill">Latest</span>
@@ -846,16 +872,23 @@ const principles = [
 								<span>{minutesToRead(featured.body)} min read</span>
 							</p>
 							<h3>{featured.data.title}</h3>
-							<p class="desc">{excerpt(featured.body, 200) || featured.data.description}</p>
-							<p class="readmore">Read the post &rarr;</p>
+							<p class="desc">{excerpt(featured.body, 220) || featured.data.description}</p>
+							{featuredTags.length > 0 && (
+								<ul class="tags" aria-label="Tags">
+									{featuredTags.map((t) => (
+										<li>{t}</li>
+									))}
+								</ul>
+							)}
 						</div>
+						<p class="readmore">Read the post &rarr;</p>
 					</a>
 				)}
 
 				<ul class="post-grid">
-					{recent.map((post, i) => (
+					{recent.map((post) => (
 						<li>
-							<PostCard post={post} image={recentImages[i]} />
+							<PostCard post={post} />
 						</li>
 					))}
 				</ul>

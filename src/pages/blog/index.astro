@@ -6,12 +6,10 @@ import Header from '../../components/Header.astro';
 import PageHeader from '../../components/PageHeader.astro';
 import PostCard from '../../components/PostCard.astro';
 import { SITE_META_DESCRIPTION, SITE_TITLE } from '../../consts';
-import { shareImage } from '../../utils/posts';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const images = await Promise.all(posts.map((p) => shareImage(p.data.image?.path)));
 const firstYear = posts.at(-1)?.data.date.getFullYear();
 ---
 
@@ -21,30 +19,18 @@ const firstYear = posts.at(-1)?.data.date.getFullYear();
 		<BaseHead title={`Blog | ${SITE_TITLE}`} description={SITE_META_DESCRIPTION} />
 		<style>
 			main {
-				width: 1100px;
+				width: 960px;
 				max-width: calc(100% - 2em);
 				padding-top: 1.5em;
 			}
 			.posts {
-				display: grid;
-				grid-template-columns: repeat(3, minmax(0, 1fr));
-				gap: 1.5rem;
 				list-style: none;
 				margin: 0;
 				padding: 0;
 			}
-			@media (max-width: 960px) {
-				.posts {
-					grid-template-columns: repeat(2, minmax(0, 1fr));
-				}
-			}
 			@media (max-width: 720px) {
 				main {
 					padding-top: 0.5em;
-				}
-				.posts {
-					grid-template-columns: 1fr;
-					gap: 1.25rem;
 				}
 			}
 		</style>
@@ -60,15 +46,9 @@ const firstYear = posts.at(-1)?.data.date.getFullYear();
 				actionLabel="Browse by tag"
 			/>
 			<ul class="posts">
-				{posts.map((post, i) => (
+				{posts.map((post) => (
 					<li>
-						<PostCard
-							post={post}
-							image={images[i]}
-							showTags
-							headingLevel="h2"
-							loading={i < 3 ? 'eager' : 'lazy'}
-						/>
+						<PostCard post={post} variant="row" showTags headingLevel="h2" />
 					</li>
 				))}
 			</ul>

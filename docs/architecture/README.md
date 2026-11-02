@@ -40,13 +40,11 @@ To add a new training series: create `learn.<topic>` following the `content/` + 
 
 ## Listing pages
 
-`src/components/PageHeader.astro` (eyebrow, title, lead, optional action link) opens every listing page, and `src/components/PostCard.astro` renders a blog post as a card wherever posts are listed (home, `/blog`, `/tags/<slug>/`). The helpers they share, including the share-image loader and reading time, live in `src/utils/posts.ts`. Blog post pages get older/newer navigation from `src/pages/blog/[...slug].astro`, which passes neighbours into `BlogPost.astro`.
+`src/components/PageHeader.astro` (eyebrow, title, lead, optional action link) opens every listing page, and `src/components/PostCard.astro` renders a blog post wherever posts are listed: as a tile on the home page and as a date-led row on `/blog` and `/tags/<slug>/`. Listings are deliberately text-first; the share images under `public/assets/<slug>/link.png` already carry the post title, so they are kept for social cards only. The helpers the listings share (reading time, tag slugs, the hidden site-wide tag) live in `src/utils/posts.ts`. Blog post pages get older/newer navigation from `src/pages/blog/[...slug].astro`, which passes neighbours into `BlogPost.astro`.
 
 ## Home page
 
-`src/pages/index.astro` is assembled from the content collections at build time: the latest post is featured with its share image, the next three follow as cards, topics are the most-used blog tags (merged case-insensitively, matching the lower-cased `/tags/<slug>/` routes), and projects are the `live` entries. Training series only render when the collection has content.
-
-The share images under `public/assets/<slug>/link.png` are imported through `import.meta.glob` (in `src/utils/posts.ts`) so Astro's image pipeline can emit resized WebP copies for the home page instead of the 1200x630 PNGs. That needs `imageService: 'compile'` on the Cloudflare adapter in `astro.config.mjs`; without it the adapter falls back to a no-op service and ships the PNGs untouched. The glob also copies every matched PNG into `dist/client/_astro/`, which is a few megabytes of unused duplicates per build but harmless.
+`src/pages/index.astro` is assembled from the content collections at build time: the latest post is featured in a dark panel, the next three follow as tiles, topics are the most-used blog tags (merged case-insensitively, matching the lower-cased `/tags/<slug>/` routes), and projects are the `live` entries. Training series only render when the collection has content.
 
 ## Search
 
