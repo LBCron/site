@@ -1,0 +1,108 @@
+name: Cloudflare Preview URL Comment
+
+# Cloudflare Workers Builds reports each deploy as a check run whose
+# summary carries the preview URLs, but it posts no PR comment, so the
+# preview is only visible by opening the check's details. This workflow
+# lifts the URLs out of that check run and keeps one comment on the PR
+# up to date with the latest deployed commit.
+#
+# check_run events run the workflow from the default branch, so this file
+# has to be on main before it fires for any PR. A repo-specific workflow,
+# not part of slopstopper (which refreshes only the ss-* files).
+# Docs: docs/deployment/README.md.
+
+on:
+  check_run:
+    types: [completed]
+
+permissions:
+  contents: read
+
+jobs:
+  comment:
+    name: Post the preview URL on the PR
+    if: >-
+      github.event.check_run.app.slug == 'cloudflare-workers-and-pages' &&
+      github.event.check_run.conclusion == 'success' &&
+      github.event.check_run.check_suite.head_branch != github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: cloudflare-preview-comment-${{ github.event.check_run.check_suite.head_branch }}
+      cancel-in-progress: false
+    steps:
+      - name: Find the PR and the preview URLs
+        id: preview
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.event.check_run.check_suite.head_branch }}
+          SHA: ${{ github.event.check_run.head_sha }}
+          SUMMARY: ${{ github.event.check_run.output.summary }}
+          DETAILS_URL: ${{ github.event.check_run.details_url }}
+        run: |
+          set -eo pipefail
+          if [ -z "$BRANCH" ]; then
+            echo "::notice::The deployed commit is on no branch, so there is no PR to comment on."
+            exit 0
+          fi
+          pr="$(gh pr list -R "$GITHUB_REPOSITORY" --head "$BRANCH" --state open --json number -q '.[0].number // empty')"
+          if [ -z "$pr" ]; then
+            echo "::notice::$BRANCH has no open PR, so the preview URL has nowhere to go."
+            exit 0
+          fi
+          # The summary reads:
+          #   Preview URL: https://<version>-site.<account>.workers.dev
+          #   Preview Alias URL: https://<branch>-site.<account>.workers.dev
+          alias_url="$(printf '%s\n' "$SUMMARY" | sed -n 's/^Preview Alias URL: *\(https:\/\/[^[:space:]]*\).*/\1/p' | head -1)"
+          version_url="$(printf '%s\n' "$SUMMARY" | sed -n 's/^Preview URL: *\(https:\/\/[^[:space:]]*\).*/\1/p' | head -1)"
+          if [ -z "$alias_url" ] && [ -z "$version_url" ]; then
+            echo "::warning::No preview URL found in the Workers Builds summary for ${SHA:0:7}."
+            exit 0
+          fi
+          for url in "$alias_url" "$version_url"; do
+            [ -z "$url" ] && continue
+            if ! python3 -c 'import sys; from urllib.parse import urlsplit; p=urlsplit(sys.argv[1]); p.port; sys.exit(not (p.scheme == "https" and p.hostname and p.hostname.endswith(".workers.dev")))' "$url" 2>/dev/null; then
+              echo "::error::Unexpected preview URL: $url"
+              exit 1
+            fi
+          done
+          {
+            echo "pr=$pr"
+            echo "alias_url=$alias_url"
+            echo "version_url=$version_url"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Upsert the preview comment
+        if: steps.preview.outputs.pr != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.preview.outputs.pr }}
+          ALIAS_URL: ${{ steps.preview.outputs.alias_url }}
+          VERSION_URL: ${{ steps.preview.outputs.version_url }}
+          SHA: ${{ github.event.check_run.head_sha }}
+          DETAILS_URL: ${{ github.event.check_run.details_url }}
+        run: |
+          set -eo pipefail
+          marker="<!-- cloudflare-preview-comment -->"
+          short="${SHA:0:7}"
+          stamp="$(date -u +'%Y-%m-%d %H:%M UTC')"
+          {
+            echo "## 🔍 Cloudflare preview"
+            echo
+            [ -n "$ALIAS_URL" ] && echo "- **Branch preview:** $ALIAS_URL" && echo "  Stable for this PR; follows the latest deploy."
+            [ -n "$VERSION_URL" ] && echo "- **This commit:** $VERSION_URL"
+            echo
+            echo "<sub>head \`$short\` · deployed $stamp · [build log]($DETAILS_URL)</sub>"
+            echo "$marker"
+          } > body.md
+          existing="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\") | select(.body | contains(\"$marker\")) | .id" | head -1)"
+          if [ -n "$existing" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$existing" -F body=@body.md > /dev/null
+            echo "Updated preview comment $existing on #$PR for $short"
+          else
+            gh api -X POST "repos/$GITHUB_REPOSITORY/issues/$PR/comments" -F body=@body.md > /dev/null
+            echo "Posted preview comment on #$PR for $short"
+          fi
