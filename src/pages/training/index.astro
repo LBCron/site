@@ -3,6 +3,8 @@ import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
 import Header from '../../components/Header.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import { SITE_TITLE } from '../../consts';
 
 const allLessons = await getCollection('training');
 const seriesMap = new Map<string, typeof allLessons>();
@@ -11,70 +13,114 @@ for (const lesson of allLessons) {
 	if (!seriesMap.has(s)) seriesMap.set(s, []);
 	seriesMap.get(s)!.push(lesson);
 }
-const series = [...seriesMap.entries()].map(([name, lessons]) => ({
-	name,
-	count: lessons.length,
-}));
+const series = [...seriesMap.entries()]
+	.map(([name, lessons]) => ({
+		name,
+		count: lessons.length,
+		first: lessons.sort((a, b) => a.data.order - b.data.order)[0]?.data.description,
+	}))
+	.sort((a, b) => a.name.localeCompare(b.name));
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
-		<BaseHead title="Training" description="Hands-on tutorial series." />
+		<BaseHead title={`Training | ${SITE_TITLE}`} description="Hands-on tutorial series, built end to end and kept in source control." />
 		<style>
 			main {
-				width: 960px;
+				width: 1100px;
+				max-width: calc(100% - 2em);
+				padding-top: 1.5em;
 			}
-			h1 {
-				margin-bottom: 2rem;
-			}
-			ul {
-				display: flex;
-				flex-wrap: wrap;
-				gap: 2rem;
-				list-style-type: none;
+			.series {
+				display: grid;
+				grid-template-columns: repeat(3, minmax(0, 1fr));
+				gap: 1.25rem;
+				list-style: none;
 				margin: 0;
 				padding: 0;
 			}
-			ul li {
-				width: calc(50% - 1rem);
-			}
-			ul li a {
+			.series a {
 				display: block;
-				text-decoration: none;
-				padding: 1.5rem;
+				height: 100%;
+				box-sizing: border-box;
+				padding: 1.5rem 1.6rem;
 				border: 1px solid rgb(var(--gray-light));
-				border-radius: 12px;
-				transition: 0.2s ease;
+				border-radius: 14px;
+				background: rgb(var(--surface));
+				text-decoration: none;
+				color: inherit;
+				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
 			}
-			ul li a:hover {
-				border-color: rgb(var(--accent));
-				box-shadow: var(--box-shadow);
+			.series a:hover {
+				border-color: var(--accent);
+				box-shadow: 0 18px 36px -24px rgba(35, 55, 255, 0.4);
+				transform: translateY(-2px);
+				text-decoration: none;
 			}
-			.series-name {
-				margin: 0 0 0.25rem;
+			.series h2 {
+				margin: 0 0 0.35rem;
+				font-size: 1.3rem;
 				text-transform: capitalize;
 				color: rgb(var(--black));
-				font-size: 1.25rem;
 			}
-			.lesson-count {
-				margin: 0;
+			.series .count {
+				margin: 0 0 0.6rem;
+				font-family: var(--font-mono);
+				font-size: 0.78rem;
 				color: rgb(var(--gray));
-				font-size: 0.9rem;
+			}
+			.series .desc {
+				margin: 0;
+				font-size: 0.92rem;
+				line-height: 1.5;
+				color: rgb(var(--gray-dark));
 			}
 			.empty {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 1.5rem;
+				align-items: center;
+				padding: 2rem 2.25rem;
 				border: 1px dashed rgb(var(--gray-light));
-				border-radius: 12px;
-				padding: 2rem;
-				text-align: center;
-				color: rgb(var(--gray));
+				border-radius: 18px;
+				background: rgb(var(--surface));
+			}
+			.empty img {
+				width: 72px;
+				height: 72px;
+				border-radius: 18%;
+			}
+			[data-theme='dark'] .empty img {
+				filter: invert(1);
+			}
+			.empty h2 {
+				margin: 0 0 0.4rem;
+				font-size: 1.5rem;
 			}
 			.empty p {
-				margin: 0.5rem 0 0;
+				margin: 0;
+				color: rgb(var(--gray-dark));
+				line-height: 1.6;
+			}
+			.empty p + p {
+				margin-top: 0.75rem;
+			}
+			@media (max-width: 960px) {
+				.series {
+					grid-template-columns: repeat(2, minmax(0, 1fr));
+				}
 			}
 			@media (max-width: 720px) {
-				ul li {
-					width: 100%;
+				main {
+					padding-top: 0.5em;
+				}
+				.series {
+					grid-template-columns: 1fr;
+				}
+				.empty {
+					grid-template-columns: 1fr;
+					padding: 1.5rem 1.4rem;
 				}
 			}
 		</style>
@@ -82,20 +128,35 @@ const series = [...seriesMap.entries()].map(([name, lessons]) => ({
 	<body>
 		<Header />
 		<main id="main-content">
-			<h1>Training</h1>
+			<PageHeader
+				eyebrow="Learn by doing"
+				title="Training"
+				lead="Hands-on series that build one thing end to end. Each lives in its own repo so you can clone it and follow along."
+				actionHref="/blog"
+				actionLabel="Or read the blog"
+			/>
 			{
 				series.length === 0 ? (
 					<div class="empty">
-						<h2>Coming soon&hellip;</h2>
-						<p>Tutorial series are back in the brewhouse for a tidy-up. Check back shortly, fellow hungovercoder.</p>
+						<img src="/icon-512.png" alt="" width="72" height="72" />
+						<div>
+							<h2>Back in the brewhouse</h2>
+							<p>
+								The tutorial series are being tidied up before they go back on tap. In the meantime
+								the <a href="/blog">blog</a> has plenty of step-by-step walkthroughs, and the source for
+								every lesson stays open on <a href="https://github.com/hungovercoders" target="_blank" rel="noopener">GitHub</a>.
+							</p>
+							<p>Check back shortly, fellow hungovercoder.</p>
+						</div>
 					</div>
 				) : (
-					<ul>
-						{series.map(({ name, count }) => (
+					<ul class="series">
+						{series.map(({ name, count, first }) => (
 							<li>
 								<a href={`/training/${name}/`}>
-									<h2 class="series-name">{name}</h2>
-									<p class="lesson-count">{count} lessons</p>
+									<h2>{name}</h2>
+									<p class="count">{count} {count === 1 ? 'lesson' : 'lessons'}</p>
+									{first && <p class="desc">{first}</p>}
 								</a>
 							</li>
 						))}

@@ -1,85 +1,304 @@
 ---
-import Layout from '../layouts/BlogPost.astro';
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import PageHeader from '../components/PageHeader.astro';
+import SocialLinks from '../components/SocialLinks.astro';
+import { SITE_TITLE } from '../consts';
+
+const principles = [
+	{
+		title: 'Small, cheap, and yours beats big, fancy, and rented.',
+		body: 'Single binaries over JVM clusters. Static sites over CMS-as-a-service. Source-controlled config over click-ops.',
+	},
+	{
+		title: 'If one slightly hungover person can’t deploy it on a Tuesday, or a Saturday with a head on them, it’s too complicated.',
+		body: 'Operational simplicity is a feature, not a constraint.',
+	},
+	{
+		title: 'Source control everything that has behaviour.',
+		body: 'Configs, infrastructure, dashboards, prompts, especially prompts now. If it’s not in git, it doesn’t exist.',
+	},
+	{
+		title: 'Shift left until it hurts, then shift left some more.',
+		body: 'Tests, linting, security, observability at the developer’s keyboard, not in a separate pipeline three weeks downstream.',
+	},
+	{
+		title: 'AI is a power tool, not a magic wand.',
+		body: 'Use it for the boring bits: scaffolding, refactoring, the YAML you can’t be bothered to type. Stay opinionated about the rest. The model does the typing; you do the judgement.',
+	},
+	{
+		title: 'Boring tech that works beats exciting tech that nearly works.',
+		body: 'Be enthusiastic about tools but suspicious of hype.',
+	},
+];
+
+const places = [
+	{ href: 'https://github.com/dataGriff', label: 'GitHub', detail: 'dataGriff, the personal account' },
+	{ href: 'https://github.com/hungovercoders', label: 'GitHub org', detail: 'hungovercoders, where the projects live' },
+	{ href: 'https://www.youtube.com/@datagriff182', label: 'YouTube', detail: 'Walkthroughs with the camera on' },
+	{ href: 'https://www.linkedin.com/in/datagriff/', label: 'LinkedIn', detail: 'The professional-looking version' },
+];
 ---
 
-<Layout
-	title="About dataGriff"
-	description="A forty-something working developer from the South Wales valleys. Honest walkthroughs, strong opinions, source-controlled everything."
-	date={new Date('2021-08-08')}
->
-	<img src="/assets/datagriff.png" alt="dataGriff portrait" class="portrait" width="200" height="200" />
+<!doctype html>
+<html lang="en">
+	<head>
+		<BaseHead
+			title={`About dataGriff | ${SITE_TITLE}`}
+			description="A forty-something working developer from the South Wales valleys. Honest walkthroughs, strong opinions, source-controlled everything."
+		/>
+		<style>
+			main {
+				width: 960px;
+				max-width: calc(100% - 2em);
+				padding-top: 1.5em;
+			}
+			.intro {
+				display: grid;
+				grid-template-columns: auto 1fr;
+				gap: 2.25rem;
+				align-items: start;
+				padding: 2.25rem 2.5rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 18px;
+				background:
+					radial-gradient(circle at 100% 0%, rgba(35, 55, 255, 0.08), transparent 45%),
+					rgb(var(--surface));
+			}
+			.portrait {
+				width: 160px;
+				height: 160px;
+				object-fit: cover;
+				object-position: center top;
+				border-radius: 50%;
+				border: 4px solid var(--accent);
+				box-shadow: 0 16px 32px -20px rgba(35, 55, 255, 0.5);
+			}
+			.intro p {
+				margin: 0 0 1rem;
+				font-size: 1.05rem;
+				line-height: 1.65;
+				color: rgb(var(--gray-dark));
+			}
+			.intro p:last-child {
+				margin-bottom: 0;
+			}
+			.intro strong {
+				color: rgb(var(--black));
+			}
+			.section {
+				margin-top: 3.5rem;
+			}
+			.eyebrow {
+				display: inline-flex;
+				align-items: center;
+				gap: 0.5rem;
+				margin: 0 0 0.6rem;
+				font-family: var(--font-mono);
+				font-size: 0.75rem;
+				text-transform: uppercase;
+				letter-spacing: 0.14em;
+				color: var(--accent);
+			}
+			.eyebrow::before {
+				content: '';
+				width: 1.5rem;
+				height: 2px;
+				background: var(--accent);
+				border-radius: 2px;
+			}
+			.section h2 {
+				margin: 0 0 0.5rem;
+				font-size: 1.85rem;
+			}
+			.section > p {
+				margin: 0 0 1.75rem;
+				color: rgb(var(--gray));
+			}
+			.principles {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 1.5rem 2rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+				counter-reset: principle;
+			}
+			.principles li {
+				counter-increment: principle;
+				padding-top: 1rem;
+				border-top: 2px solid rgb(var(--gray-light));
+			}
+			.principles li::before {
+				content: counter(principle, decimal-leading-zero);
+				display: block;
+				font-family: var(--font-mono);
+				font-size: 0.78rem;
+				letter-spacing: 0.1em;
+				color: var(--accent);
+				margin-bottom: 0.6rem;
+			}
+			.principles h3 {
+				margin: 0 0 0.5rem;
+				font-size: 1.15rem;
+				line-height: 1.3;
+			}
+			.principles p {
+				margin: 0;
+				font-size: 0.95rem;
+				line-height: 1.55;
+				color: rgb(var(--gray-dark));
+			}
+			.places {
+				display: grid;
+				grid-template-columns: repeat(2, minmax(0, 1fr));
+				gap: 1rem;
+				list-style: none;
+				margin: 0;
+				padding: 0;
+			}
+			.places a {
+				display: block;
+				padding: 1.1rem 1.3rem;
+				border: 1px solid rgb(var(--gray-light));
+				border-radius: 14px;
+				background: rgb(var(--surface));
+				text-decoration: none;
+				color: inherit;
+				transition: border-color 0.15s ease, transform 0.15s ease;
+			}
+			.places a:hover {
+				border-color: var(--accent);
+				transform: translateY(-2px);
+				text-decoration: none;
+			}
+			.places strong {
+				display: block;
+				color: rgb(var(--black));
+				margin-bottom: 0.15rem;
+			}
+			.places a:hover strong {
+				color: var(--accent);
+			}
+			.places span {
+				font-size: 0.9rem;
+				color: rgb(var(--gray));
+			}
+			.cheers {
+				margin: 3rem 0 0;
+				padding: 1.5rem 2rem;
+				border-radius: 16px;
+				background: var(--accent);
+				color: #fff;
+				font-family: var(--font-display);
+				font-size: 1.3rem;
+				font-weight: 700;
+				text-align: center;
+			}
+			[data-theme='dark'] .cheers {
+				background: #2337ff;
+			}
+			@media (max-width: 720px) {
+				main {
+					padding-top: 0.5em;
+				}
+				.intro {
+					grid-template-columns: 1fr;
+					justify-items: center;
+					text-align: left;
+					padding: 1.5rem 1.4rem;
+					gap: 1.25rem;
+				}
+				.portrait {
+					width: 128px;
+					height: 128px;
+				}
+				.section {
+					margin-top: 2.75rem;
+				}
+				.principles,
+				.places {
+					grid-template-columns: 1fr;
+				}
+				.cheers {
+					font-size: 1.1rem;
+					padding: 1.25rem 1.4rem;
+				}
+			}
+		</style>
+	</head>
+	<body>
+		<Header />
+		<main id="main-content">
+			<PageHeader
+				eyebrow="About"
+				title="dataGriff"
+				lead="A forty-something working developer from the South Wales valleys. Honest walkthroughs, strong opinions, source-controlled everything."
+			/>
 
-	<p>
-		I'm dataGriff, a forty-something working developer from the South Wales valleys. I've spent my
-		career in data engineering, DevOps, and anything involving making systems smaller, cheaper, and
-		more yours. These days that includes working with AI agents alongside everything else. The blog
-		is called hungovercoders because that's more honest than whatever I'd have come up with sober.
-	</p>
+			<section class="intro" aria-label="Introduction">
+				<img src="/assets/datagriff.png" alt="dataGriff portrait" class="portrait" width="160" height="160" />
+				<div>
+					<p>
+						I&rsquo;ve spent my career in data engineering, DevOps, and anything involving making systems
+						smaller, cheaper, and more yours. These days that includes working with AI agents alongside
+						everything else. The blog is called <strong>hungovercoders</strong> because that&rsquo;s more
+						honest than whatever I&rsquo;d have come up with sober.
+					</p>
+					<p>
+						The posts are walkthroughs of things I actually built. Not theoretical, not sanitised. Some
+						written on a Friday night, most polished on a Sunday morning with the dog asleep on the sofa.
+						The code ran on my laptop first and I&rsquo;ll tell you when it didn&rsquo;t go to plan, because
+						that&rsquo;s the bit the vendor docs leave out, and it&rsquo;s usually the most useful part.
+					</p>
+					<p>
+						Alongside the writing I build apps and tools. See <a href="/projects">Projects</a> for the
+						current set, live and in progress.
+					</p>
+					<p>
+						AI is on the team now too. I work with Claude Code (and friends) daily: the agents scaffold,
+						draft, refactor, type out the YAML I can&rsquo;t be bothered to. I do the judgement calls. When
+						AI helped, I say so. That&rsquo;s more interesting than pretending I wrote every keystroke.
+					</p>
+				</div>
+			</section>
 
-	<p>
-		The posts are walkthroughs of things I actually built. Not theoretical, not sanitised. Some
-		written on a Friday night, most polished on a Sunday morning with the dog asleep on the sofa.
-		The code ran on my laptop first and I'll tell you when it didn't go to plan, because that's the
-		bit the vendor docs leave out, and it's usually the most useful part.
-	</p>
+			<section class="section" aria-labelledby="worldview">
+				<p class="eyebrow">The worldview</p>
+				<h2 id="worldview">Every post is quietly making one of these arguments</h2>
+				<p>
+					I&rsquo;ve been doing this long enough to have opinions, and long enough to have been wrong about
+					half of them. The &ldquo;what I&rsquo;d do differently&rdquo; section in every post is the honest bit.
+				</p>
+				<ol class="principles">
+					{principles.map((p) => (
+						<li>
+							<h3>{p.title}</h3>
+							<p>{p.body}</p>
+						</li>
+					))}
+				</ol>
+			</section>
 
-	<p>
-		Alongside the writing I build apps and tools. See <a href="/projects">Projects</a> for the
-		current set, live and in progress.
-	</p>
+			<section class="section" aria-labelledby="find-me">
+				<p class="eyebrow">Elsewhere</p>
+				<h2 id="find-me">Where to find me</h2>
+				<p>No newsletter, no funnel. Just the places the work already lives.</p>
+				<ul class="places">
+					{places.map((p) => (
+						<li>
+							<a href={p.href} target="_blank" rel="noopener">
+								<strong>{p.label}</strong>
+								<span>{p.detail}</span>
+							</a>
+						</li>
+					))}
+				</ul>
+			</section>
 
-	<p>
-		AI is on the team now too. I work with Claude Code (and friends) daily: the agents scaffold,
-		draft, refactor, type out the YAML I can't be bothered to. I do the judgement calls. When AI
-		helped, I say so. That's more interesting than pretending I wrote every keystroke.
-	</p>
-
-	<h2>The worldview</h2>
-
-	<p>Every post is quietly making one of these arguments:</p>
-
-	<ul>
-		<li><strong>Small, cheap, and yours beats big, fancy, and rented.</strong> Single binaries over JVM clusters. Static sites over CMS-as-a-service. Source-controlled config over click-ops.</li>
-		<li><strong>If one slightly hungover person can't deploy it on a Tuesday, or a Saturday with a head on them, it's too complicated.</strong> Operational simplicity is a feature, not a constraint.</li>
-		<li><strong>Source control everything that has behaviour.</strong> Configs, infrastructure, dashboards, prompts, especially prompts now. If it's not in git, it doesn't exist.</li>
-		<li><strong>Shift left until it hurts, then shift left some more.</strong> Tests, linting, security, observability at the developer's keyboard, not in a separate pipeline three weeks downstream.</li>
-		<li><strong>AI is a power tool, not a magic wand.</strong> Use it for the boring bits: scaffolding, refactoring, the YAML you can't be bothered to type. Stay opinionated about the rest. The model does the typing; you do the judgement.</li>
-		<li><strong>Boring tech that works beats exciting tech that nearly works.</strong> Be enthusiastic about tools but suspicious of hype.</li>
-	</ul>
-
-	<p>
-		I've been doing this long enough to have opinions, and long enough to have been wrong about half
-		of them. The "what I'd do differently" section in every post is the honest bit.
-	</p>
-
-	<h2>Where to find me</h2>
-
-	<ul>
-		<li><a href="https://github.com/dataGriff">GitHub — dataGriff</a></li>
-		<li><a href="https://youtube.com/@hungovercoders">YouTube — @hungovercoders</a></li>
-		<li><a href="https://github.com/hungovercoders">GitHub org — hungovercoders</a></li>
-	</ul>
-
-	<p>Well done for reading this far, fellow hungovercoder. Cheers.</p>
-</Layout>
-
-<style>
-	.portrait {
-		float: right;
-		width: 180px;
-		height: 180px;
-		object-fit: cover;
-		object-position: center top;
-		border-radius: 50%;
-		margin: 0 0 1rem 1.5rem;
-		border: 3px solid rgb(var(--accent));
-		box-shadow: 0 2px 8px rgba(var(--black), 0.1);
-	}
-	@media (max-width: 720px) {
-		.portrait {
-			float: none;
-			display: block;
-			margin: 0 auto 1.5rem;
-		}
-	}
-</style>
+			<p class="cheers">Well done for reading this far, fellow hungovercoder. Cheers.</p>
+		</main>
+		<Footer />
+	</body>
+</html>

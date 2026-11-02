@@ -14,6 +14,8 @@ Cloudflare dashboard build settings:
 
 Every push to `main` deploys. Every PR gets a preview URL as a commit check. Closing a PR retires the preview. No GitHub Actions deploy workflow exists or is needed.
 
+Workers Builds puts the preview URLs only in the summary of its `Workers Builds: site` check run and posts no PR comment. The repo-specific workflow `.github/workflows/cloudflare-preview-comment.yml` listens for that check run succeeding on a non-default branch, lifts the branch alias and per-version URLs out of the summary, and upserts a single comment on the PR (marker `<!-- cloudflare-preview-comment -->`). Like every `check_run`-triggered workflow it runs from `main`, so it only fires once the file is on the default branch. It is not part of slopstopper, so a slopstopper refresh leaves it alone.
+
 ## DNS
 
 DNS is hosted at **Namecheap** (nameservers `dns1/2.registrar-servers.com`) with A records pointing at Cloudflare anycast IPs. DNS record changes happen at Namecheap, not in the Cloudflare dashboard.

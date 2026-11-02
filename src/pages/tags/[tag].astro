@@ -2,10 +2,11 @@
 import { getCollection } from 'astro:content';
 import BaseHead from '../../components/BaseHead.astro';
 import Footer from '../../components/Footer.astro';
-import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
+import PageHeader from '../../components/PageHeader.astro';
+import PostCard from '../../components/PostCard.astro';
 import { SITE_TITLE } from '../../consts';
-import { excerpt } from '../../utils/excerpt';
+import { tagSlug } from '../../utils/posts';
 
 export async function getStaticPaths() {
 	const posts = await getCollection('blog');
@@ -13,7 +14,7 @@ export async function getStaticPaths() {
 	for (const post of posts) {
 		for (const tag of post.data.tags ?? []) {
 			if (tag.toLowerCase() === 'hungovercoders') continue;
-			const slug = tag.toLowerCase().replace(/\s+/g, '-');
+			const slug = tagSlug(tag);
 			if (!grouped.has(slug)) grouped.set(slug, { display: tag, posts: [] });
 			grouped.get(slug)!.posts.push(post);
 		}
@@ -39,86 +40,18 @@ const { display, posts } = Astro.props;
 		/>
 		<style>
 			main {
-				width: 880px;
+				width: 960px;
 				max-width: calc(100% - 2em);
-			}
-			.page-header {
-				text-align: center;
-				margin-bottom: 3.5rem;
-			}
-			.page-header .eyebrow {
-				color: rgb(var(--gray));
-				text-transform: uppercase;
-				letter-spacing: 1.5px;
-				font-size: 0.8rem;
-				margin: 0 0 0.5rem;
-			}
-			.page-header h1 {
-				margin: 0 0 0.5rem;
-				text-transform: lowercase;
-			}
-			.page-header .count {
-				color: rgb(var(--gray));
-				margin: 0;
-			}
-			.page-header .back {
-				display: inline-block;
-				margin-top: 1rem;
-				color: var(--accent);
-				text-decoration: none;
-				font-size: 0.9rem;
-			}
-			.page-header .back:hover {
-				text-decoration: underline;
+				padding-top: 1.5em;
 			}
 			.posts {
 				list-style: none;
+				margin: 0;
 				padding: 0;
-				margin: 0;
-				display: flex;
-				flex-direction: column;
-			}
-			.post {
-				border-top: 1px solid rgb(var(--gray-light));
-				padding: 2rem 0;
-			}
-			.post:last-child {
-				border-bottom: 1px solid rgb(var(--gray-light));
-			}
-			.post a {
-				display: block;
-				color: inherit;
-				text-decoration: none;
-			}
-			.post .date {
-				color: rgb(var(--gray));
-				font-size: 0.8rem;
-				text-transform: uppercase;
-				letter-spacing: 1px;
-				margin: 0 0 0.5rem;
-			}
-			.post h2 {
-				margin: 0 0 0.5rem;
-				font-size: 1.7rem;
-				line-height: 1.25;
-				color: rgb(var(--black));
-				transition: color 0.15s ease;
-			}
-			.post a:hover h2 {
-				color: var(--accent);
-			}
-			.post .desc {
-				color: rgb(var(--gray-dark));
-				font-size: 1rem;
-				line-height: 1.55;
-				margin: 0;
 			}
 			@media (max-width: 720px) {
-				.post {
-					padding: 1.5rem 0;
-				}
-				.post h2 {
-					font-size: 1.4rem;
+				main {
+					padding-top: 0.5em;
 				}
 			}
 		</style>
@@ -126,29 +59,20 @@ const { display, posts } = Astro.props;
 	<body>
 		<Header />
 		<main id="main-content">
-			<header class="page-header">
-				<p class="eyebrow">Tag</p>
-				<h1>#{display}</h1>
-				<p class="count">{posts.length} {posts.length === 1 ? 'post' : 'posts'}</p>
-				<a class="back" href="/tags/">&larr; all tags</a>
-			</header>
+			<PageHeader
+				eyebrow="Tag"
+				title={`#${display}`}
+				lowercase
+				lead={`${posts.length} ${posts.length === 1 ? 'post' : 'posts'} tagged ${display.toLowerCase()}.`}
+				actionHref="/tags"
+				actionLabel="All tags"
+			/>
 			<ul class="posts">
-				{
-					posts.map((post) => {
-						const blurb = excerpt(post.body, 220) || post.data.description;
-						return (
-							<li class="post">
-								<a href={`/blog/${post.id}/`}>
-									<p class="date">
-										<FormattedDate date={post.data.date} />
-									</p>
-									<h2>{post.data.title}</h2>
-									<p class="desc">{blurb}</p>
-								</a>
-							</li>
-						);
-					})
-				}
+				{posts.map((post) => (
+					<li>
+						<PostCard post={post} variant="row" showTags headingLevel="h2" />
+					</li>
+				))}
 			</ul>
 		</main>
 		<Footer />

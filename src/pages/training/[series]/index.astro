@@ -3,6 +3,8 @@ import { type CollectionEntry, getCollection } from 'astro:content';
 import BaseHead from '../../../components/BaseHead.astro';
 import Footer from '../../../components/Footer.astro';
 import Header from '../../../components/Header.astro';
+import PageHeader from '../../../components/PageHeader.astro';
+import { SITE_TITLE } from '../../../consts';
 
 export async function getStaticPaths() {
 	const allLessons = await getCollection('training');
@@ -27,69 +29,116 @@ function lessonSlug(entry: CollectionEntry<'training'>) {
 
 const { series } = Astro.params;
 const { lessons } = Astro.props;
+const pad = (n: number) => String(n).padStart(2, '0');
 ---
 
 <!doctype html>
 <html lang="en">
 	<head>
 		<BaseHead
-			title={`${series} — Training`}
+			title={`${series} | Training | ${SITE_TITLE}`}
 			description={`${lessons.length} lessons in the ${series} series.`}
 		/>
 		<style>
 			main {
-				max-width: 720px;
-				margin: 2rem auto;
-				padding: 0 1rem;
+				width: 880px;
+				max-width: calc(100% - 2em);
+				padding-top: 1.5em;
 			}
-			h1 {
+			main :global(h1) {
 				text-transform: capitalize;
 			}
-			ol {
-				padding: 0;
-				margin: 2rem 0;
+			.lessons {
 				list-style: none;
+				margin: 0;
+				padding: 0;
 				display: flex;
 				flex-direction: column;
-				gap: 1rem;
+				gap: 0.85rem;
 			}
-			ol li a {
-				display: block;
-				padding: 1rem 1.25rem;
+			.lessons a {
+				display: grid;
+				grid-template-columns: auto 1fr auto;
+				gap: 1.25rem;
+				align-items: center;
+				padding: 1.1rem 1.4rem;
 				border: 1px solid rgb(var(--gray-light));
-				border-radius: 8px;
+				border-radius: 14px;
+				background: rgb(var(--surface));
 				text-decoration: none;
-				transition: 0.2s ease;
+				color: inherit;
+				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
 			}
-			ol li a:hover {
-				border-color: rgb(var(--accent));
-				box-shadow: var(--box-shadow);
+			.lessons a:hover {
+				border-color: var(--accent);
+				box-shadow: 0 18px 36px -24px rgba(35, 55, 255, 0.4);
+				transform: translateY(-2px);
+				text-decoration: none;
 			}
-			.lesson-title {
-				margin: 0 0 0.25rem;
+			.num {
+				font-family: var(--font-mono);
+				font-size: 0.85rem;
+				letter-spacing: 0.1em;
+				color: var(--accent);
+			}
+			.lessons h2 {
+				margin: 0 0 0.2rem;
+				font-size: 1.15rem;
+				line-height: 1.3;
 				color: rgb(var(--black));
+			}
+			.lessons a:hover h2 {
+				color: var(--accent);
+			}
+			.lessons p {
+				margin: 0;
+				color: rgb(var(--gray-dark));
+				font-size: 0.92rem;
+				line-height: 1.5;
+			}
+			.arrow {
+				color: rgb(var(--gray));
 				font-size: 1.1rem;
 			}
-			.lesson-desc {
-				margin: 0;
-				color: rgb(var(--gray));
-				font-size: 0.9rem;
+			.lessons a:hover .arrow {
+				color: var(--accent);
+			}
+			@media (max-width: 720px) {
+				main {
+					padding-top: 0.5em;
+				}
+				.lessons a {
+					grid-template-columns: auto 1fr;
+					gap: 0.9rem;
+					padding: 1rem 1.1rem;
+				}
+				.arrow {
+					display: none;
+				}
 			}
 		</style>
 	</head>
 	<body>
 		<Header />
 		<main id="main-content">
-			<h1>{series}</h1>
-			<ol>
+			<PageHeader
+				eyebrow="Training series"
+				title={series!}
+				lead={`${lessons.length} ${lessons.length === 1 ? 'lesson' : 'lessons'}, in order. Start at the top and work down.`}
+				actionHref="/training"
+				actionLabel="All series"
+			/>
+			<ol class="lessons">
 				{
 					lessons.map((lesson) => (
 						<li>
 							<a href={`/training/${lesson.data.series}/${lessonSlug(lesson)}/`}>
-								<h2 class="lesson-title">
-									{lesson.data.order}. {lesson.data.title}
-								</h2>
-								<p class="lesson-desc">{lesson.data.description}</p>
+								<span class="num">{pad(lesson.data.order)}</span>
+								<div>
+									<h2>{lesson.data.title}</h2>
+									<p>{lesson.data.description}</p>
+								</div>
+								<span class="arrow" aria-hidden="true">&rarr;</span>
 							</a>
 						</li>
 					))

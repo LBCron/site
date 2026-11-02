@@ -13,7 +13,7 @@ How the site is put together.
 
 ```
 src/
-  components/        BaseHead, Header, Footer, Search
+  components/        BaseHead, Header, Footer, SocialLinks, Search, PageHeader, PostCard
   content/blog/      Blog posts (YYYY-MM-DD-slug.md)
   content/projects/  Live project entries
   content.config.ts  Astro content-collection schemas
@@ -37,6 +37,14 @@ Lesson markdown lives canonically in sibling `learn.*` repos. The Astro glob loa
 - **Local dev:** run `./scripts/link-local-repos.sh` once after cloning. It auto-discovers `learn.*` sibling directories and symlinks them into `training-repos/`.
 
 To add a new training series: create `learn.<topic>` following the `content/` + `examples/` layout, then add `"learn.<topic>"` to the `REPOS` array in `scripts/fetch-training-repos.sh`. `link-local-repos.sh` picks it up automatically.
+
+## Listing pages
+
+`src/components/PageHeader.astro` (eyebrow, title, lead, optional action link) opens every listing page, and `src/components/PostCard.astro` renders a blog post wherever posts are listed: as a tile on the home page and as a date-led row on `/blog` and `/tags/<slug>/`. Listings are deliberately text-first; the share images under `public/assets/<slug>/link.png` already carry the post title, so they are kept for social cards only. The helpers the listings share (reading time, tag slugs, the hidden site-wide tag) live in `src/utils/posts.ts`. Blog post pages get older/newer navigation from `src/pages/blog/[...slug].astro`, which passes neighbours into `BlogPost.astro`.
+
+## Home page
+
+`src/pages/index.astro` is assembled from the content collections at build time: the latest post is featured in a dark panel, the next three follow as tiles, topics are the most-used blog tags (merged case-insensitively, matching the lower-cased `/tags/<slug>/` routes), and projects are the `live` entries. Training series only render when the collection has content.
 
 ## Search
 
