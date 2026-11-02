@@ -1,14 +1,14 @@
 ---
-import type { ImageMetadata } from 'astro';
 import { Image } from 'astro:assets';
 import { getCollection } from 'astro:content';
-import readingTime from 'reading-time';
 import BaseHead from '../components/BaseHead.astro';
 import Footer from '../components/Footer.astro';
 import FormattedDate from '../components/FormattedDate.astro';
 import Header from '../components/Header.astro';
+import PostCard from '../components/PostCard.astro';
 import { SITE_META_DESCRIPTION, SITE_TITLE } from '../consts';
 import { excerpt } from '../utils/excerpt';
+import { minutesToRead, shareImage, tagSlug } from '../utils/posts';
 
 const posts = (await getCollection('blog')).sort(
 	(a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
@@ -16,19 +16,8 @@ const posts = (await getCollection('blog')).sort(
 const [featured, ...rest] = posts;
 const recent = rest.slice(0, 3);
 
-// Share images live under public/ so the browser can fetch them by URL, but
-// importing them here lets Astro's image pipeline resize and re-encode the
-// copies used on the home page instead of shipping 1200x630 PNGs.
-const shareImages = import.meta.glob<{ default: ImageMetadata }>('/public/assets/*/link.png');
-const shareImage = async (path?: string) => {
-	if (!path) return null;
-	const loader = shareImages[`/public${path}`];
-	return loader ? (await loader()).default : null;
-};
 const featuredImage = await shareImage(featured?.data.image?.path);
 const recentImages = await Promise.all(recent.map((p) => shareImage(p.data.image?.path)));
-
-const minutes = (body?: string) => Math.max(1, Math.round(readingTime(body ?? '').minutes));
 
 // Tags are merged case-insensitively here (Azure/azure, API/api) because the
 // tag pages already share a lower-cased slug, so one chip per topic is right.
@@ -43,7 +32,6 @@ for (const post of posts) {
 const topics = [...tagCounts.entries()]
 	.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
 	.slice(0, 14);
-const slugify = (t: string) => t.toLowerCase().replace(/\s+/g, '-');
 
 const projects = (await getCollection('projects'))
 	.filter((p) => p.data.status === 'live')
@@ -441,59 +429,6 @@ const principles = [
 				margin: 1.5rem 0 0;
 				padding: 0;
 			}
-			.post-card {
-				display: flex;
-				flex-direction: column;
-				height: 100%;
-				border: 1px solid rgb(var(--gray-light));
-				border-radius: 14px;
-				overflow: hidden;
-				background: rgb(var(--surface));
-				color: inherit;
-				text-decoration: none;
-				transition: border-color 0.15s ease, box-shadow 0.2s ease, transform 0.2s ease;
-			}
-			.post-card:hover {
-				border-color: var(--accent);
-				box-shadow: 0 18px 36px -24px rgba(35, 55, 255, 0.4);
-				transform: translateY(-2px);
-				text-decoration: none;
-			}
-			.post-card img,
-			.post-card .ph {
-				display: block;
-				width: 100%;
-				aspect-ratio: 1200 / 630;
-				height: auto;
-				object-fit: cover;
-				border-radius: 0;
-			}
-			.post-card .ph {
-				background: linear-gradient(135deg, #0f1219, #1a2250 70%, #2337ff);
-			}
-			.post-card-body {
-				padding: 1.25rem 1.35rem 1.4rem;
-				display: flex;
-				flex-direction: column;
-				flex: 1;
-			}
-			.post-card h3 {
-				margin: 0 0 0.5rem;
-				font-size: 1.2rem;
-				line-height: 1.25;
-				color: rgb(var(--black));
-				transition: color 0.15s ease;
-			}
-			.post-card:hover h3 {
-				color: var(--accent);
-			}
-			.post-card .desc {
-				margin: 0;
-				color: rgb(var(--gray-dark));
-				font-size: 0.92rem;
-				line-height: 1.5;
-			}
-
 			/* ---------- topics ---------- */
 			.topics {
 				display: flex;
@@ -908,7 +843,7 @@ const principles = [
 								<span class="pill">Latest</span>
 								<FormattedDate date={featured.data.date} />
 								<span class="dot" aria-hidden="true" />
-								<span>{minutes(featured.body)} min read</span>
+								<span>{minutesToRead(featured.body)} min read</span>
 							</p>
 							<h3>{featured.data.title}</h3>
 							<p class="desc">{excerpt(featured.body, 200) || featured.data.description}</p>
@@ -920,28 +855,7 @@ const principles = [
 				<ul class="post-grid">
 					{recent.map((post, i) => (
 						<li>
-							<a class="post-card" href={`/blog/${post.id}/`}>
-								{recentImages[i] ? (
-									<Image
-										src={recentImages[i]!}
-										alt=""
-										widths={[360, 540, 720]}
-										sizes="(max-width: 720px) 100vw, (max-width: 960px) 50vw, 350px"
-										loading="lazy"
-									/>
-								) : (
-									<div class="ph" />
-								)}
-								<div class="post-card-body">
-									<p class="meta">
-										<FormattedDate date={post.data.date} />
-										<span class="dot" aria-hidden="true" />
-										<span>{minutes(post.body)} min read</span>
-									</p>
-									<h3>{post.data.title}</h3>
-									<p class="desc">{excerpt(post.body, 150) || post.data.description}</p>
-								</div>
-							</a>
+							<PostCard post={post} image={recentImages[i]} />
 						</li>
 					))}
 				</ul>
@@ -958,7 +872,7 @@ const principles = [
 				<ul class="topics">
 					{topics.map(([tag, count]) => (
 						<li>
-							<a href={`/tags/${slugify(tag)}/`}>
+							<a href={`/tags/${tagSlug(tag)}/`}>
 								{tag}
 								<span class="count">{count}</span>
 							</a>

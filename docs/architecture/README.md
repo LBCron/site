@@ -13,7 +13,7 @@ How the site is put together.
 
 ```
 src/
-  components/        BaseHead, Header, Footer, SocialLinks, Search
+  components/        BaseHead, Header, Footer, SocialLinks, Search, PageHeader, PostCard
   content/blog/      Blog posts (YYYY-MM-DD-slug.md)
   content/projects/  Live project entries
   content.config.ts  Astro content-collection schemas
@@ -38,11 +38,15 @@ Lesson markdown lives canonically in sibling `learn.*` repos. The Astro glob loa
 
 To add a new training series: create `learn.<topic>` following the `content/` + `examples/` layout, then add `"learn.<topic>"` to the `REPOS` array in `scripts/fetch-training-repos.sh`. `link-local-repos.sh` picks it up automatically.
 
+## Listing pages
+
+`src/components/PageHeader.astro` (eyebrow, title, lead, optional action link) opens every listing page, and `src/components/PostCard.astro` renders a blog post as a card wherever posts are listed (home, `/blog`, `/tags/<slug>/`). The helpers they share, including the share-image loader and reading time, live in `src/utils/posts.ts`. Blog post pages get older/newer navigation from `src/pages/blog/[...slug].astro`, which passes neighbours into `BlogPost.astro`.
+
 ## Home page
 
 `src/pages/index.astro` is assembled from the content collections at build time: the latest post is featured with its share image, the next three follow as cards, topics are the most-used blog tags (merged case-insensitively, matching the lower-cased `/tags/<slug>/` routes), and projects are the `live` entries. Training series only render when the collection has content.
 
-The share images under `public/assets/<slug>/link.png` are imported through `import.meta.glob` so Astro's image pipeline can emit resized WebP copies for the home page instead of the 1200x630 PNGs. That needs `imageService: 'compile'` on the Cloudflare adapter in `astro.config.mjs`; without it the adapter falls back to a no-op service and ships the PNGs untouched. The glob also copies every matched PNG into `dist/client/_astro/`, which is a few megabytes of unused duplicates per build but harmless.
+The share images under `public/assets/<slug>/link.png` are imported through `import.meta.glob` (in `src/utils/posts.ts`) so Astro's image pipeline can emit resized WebP copies for the home page instead of the 1200x630 PNGs. That needs `imageService: 'compile'` on the Cloudflare adapter in `astro.config.mjs`; without it the adapter falls back to a no-op service and ships the PNGs untouched. The glob also copies every matched PNG into `dist/client/_astro/`, which is a few megabytes of unused duplicates per build but harmless.
 
 ## Search
 

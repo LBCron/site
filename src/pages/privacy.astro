@@ -2,6 +2,7 @@
 import BaseHead from '../components/BaseHead.astro';
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import PageHeader from '../components/PageHeader.astro';
 
 const title = 'Privacy';
 const description =
@@ -15,7 +16,11 @@ const description =
 	<body>
 		<Header />
 		<main id="main-content" class="prose">
-			<h1>Privacy</h1>
+			<PageHeader
+				eyebrow="The small print"
+				title="Privacy"
+				lead="What this site collects about you, which is very little, and why."
+			/>
 
 			<p>
 				Short version: this site uses privacy-first, cookieless analytics to count visits and see
@@ -31,8 +36,7 @@ const description =
 
 			<h2>Analytics</h2>
 			<p>
-				Traffic is measured with
-				<a href="https://www.cloudflare.com/web-analytics/" target="_blank" rel="noopener noreferrer">Cloudflare Web Analytics</a>,
+				Traffic is measured with <a href="https://www.cloudflare.com/web-analytics/" target="_blank" rel="noopener noreferrer">Cloudflare Web Analytics</a>,
 				a privacy-first tool that uses no cookies and no client-side storage. It records aggregate
 				metrics only: page views, the referring site, approximate country, and device or browser
 				type. That helps me see how the site performs and which posts are useful.
@@ -42,13 +46,10 @@ const description =
 				and is <strong>not stored</strong> by the analytics. There is no fingerprinting, no cross-site tracking, no
 				advertising, and no selling of data. The legal basis for this limited processing is
 				legitimate interest, and because nothing is stored on your device, no consent banner is
-				required. See
-				<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare's privacy policy</a>
-				for how they handle the data on my behalf.
+				required. See <a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener noreferrer">Cloudflare's privacy policy</a> for how they handle the data on my behalf.
 			</p>
 			<p>
-				Cloudflare acts as my data processor for this, under its
-				<a href="https://www.cloudflare.com/cloudflare-customer-dpa/" target="_blank" rel="noopener noreferrer">Data Processing Addendum</a>;
+				Cloudflare acts as my data processor for this, under its <a href="https://www.cloudflare.com/cloudflare-customer-dpa/" target="_blank" rel="noopener noreferrer">Data Processing Addendum</a>;
 				any transfer of data outside the UK or EEA is covered by Standard Contractual Clauses and the
 				UK/EU–US Data Privacy Framework. You have the right to ask what is held about you and to
 				request its erasure. Beyond those short-lived logs, no identifying data is stored, so there is nothing tied to you to
@@ -86,13 +87,11 @@ const description =
 
 <style>
 	.prose {
+		width: 760px;
 		max-width: calc(100% - 2em);
-		margin: 3rem auto;
-		padding: 0 1rem;
+		margin: 0 auto;
+		padding: 1.5em 1rem 3rem;
 		color: rgb(var(--gray-dark));
-	}
-	.prose h1 {
-		margin-bottom: 0.5em;
 	}
 	.prose h2 {
 		margin-top: 1.5em;
