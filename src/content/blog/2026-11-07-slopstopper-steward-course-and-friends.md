@@ -131,6 +131,8 @@ A run, step by step:
 
 The agent is boxed, because the steward runs git and `gh` with a push token over whatever it leaves behind. It runs as its own OS user in its own copy of the clone, with no token, no network, a tool allow-list built per order from the checks the pinned CLI says the clone can run, a dollar cap and a turn cap. It never gets a vote on whether its own change passes. The gates do, then the PR's CI does, and only then does anything merge.
 
+Which model does the judging is one line in `steward.yml`, handed straight to `claude --model`. Mine says `sonnet`, and so far Sonnet has been really cheap for this kind of work: twelve cents to read a refresh and change nothing, twenty to read one and explain why nothing needed changing, thirty to find and split a function that had crept over the complexity ceiling and have a second run review it. Every PR body names the model and the bill, so if I ever move it up to a bigger model I'll see exactly what that buys.
+
 ### Dependabot
 
 Dependabot opens the bump, the steward waits for its checks. If they're red it hands each failing job to the agent with the log tail and the release notes, under a brief that says adapt the repo to the new version and never loosen a test or pin back. The fix goes onto Dependabot's own branch, fast-forward only, with one comment saying what happened. Green patch and minor bumps are merged by the run that saw them green. Majors are listed for a person.
