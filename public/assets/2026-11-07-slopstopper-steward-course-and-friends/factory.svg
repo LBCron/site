@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 332" role="img" aria-labelledby="factoryTitle factoryDesc">
+  <title id="factoryTitle">Where slopstopper sits: between the agents that write code and the code that ships</title>
+  <desc id="factoryDesc">Three boxes left to right. Generators: agents such as Claude Code, often driven from a phone, writing code that is different every time, flowing out as pull requests. Gates: slopstopper, twenty-five deterministic checks in three loops, security, hygiene and reliability, run by the same task command on a laptop and in CI, each exiting 0 for clean, 1 for found something and 2 for could not run. What ships: the pull request merges and Cloudflare deploys the preview to production. A fourth band beneath, the steward, loops back into the gates: it keeps every repo in the org on the current slopstopper version and works the issues the gates raise, so the gates stay current without a person remembering.</desc>
+  <defs>
+    <style>
+      .h { font-family: 'Lora', Georgia, Cambria, serif; font-size: 14px; font-weight: 700; fill: rgb(34, 41, 57); }
+      .sub { font-family: 'Atkinson', system-ui, sans-serif; font-size: 11px; fill: rgb(96, 115, 159); }
+      .body { font-family: 'Atkinson', system-ui, sans-serif; font-size: 11px; fill: rgb(34, 41, 57); }
+      .muted { font-family: 'Atkinson', system-ui, sans-serif; font-size: 10.5px; fill: rgb(96, 115, 159); }
+      .mono { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10.5px; fill: rgb(34, 41, 57); }
+      .pill { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; fill: #fff; }
+      .lbl { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; }
+      .gen { fill: #fff; stroke: #2337ff; stroke-width: 1.5; }
+      .genHead { fill: #2337ff; }
+      .gate { fill: rgb(216, 241, 225); stroke: #1ea672; stroke-width: 1.5; }
+      .gateHead { fill: #1ea672; }
+      .ship { fill: #fff; stroke: rgb(96, 115, 159); stroke-width: 1.5; }
+      .shipHead { fill: rgb(96, 115, 159); }
+      .stew { fill: #fff; stroke: #7350dc; stroke-width: 1.5; }
+      .stewHead { fill: #7350dc; }
+      .flow { stroke: rgb(96, 115, 159); fill: none; stroke-width: 1.8; }
+      .flowGreen { stroke: #1ea672; fill: none; stroke-width: 1.8; }
+      .flowPurple { stroke: #7350dc; fill: none; stroke-width: 1.8; stroke-dasharray: 4 3; }
+      .loop { fill: #fff; stroke: rgb(229, 233, 240); }
+      .exit { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; }
+    </style>
+    <marker id="fGrey" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="rgb(96, 115, 159)"/></marker>
+    <marker id="fGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1ea672"/></marker>
+    <marker id="fPurple" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#7350dc"/></marker>
+  </defs>
+
+  <rect width="720" height="332" fill="#f8f9fb"/>
+  <text x="20" y="32" class="h">A factory needs inspection</text>
+  <text x="20" y="50" class="sub">Generators are allowed to be creative. Gates are not. The steward keeps the gates current.</text>
+
+  <!-- Generators -->
+  <rect x="20" y="70" width="190" height="130" rx="6" class="gen"/>
+  <rect x="20" y="70" width="190" height="20" rx="6" class="genHead"/>
+  <text x="115" y="84" text-anchor="middle" class="pill">GENERATORS</text>
+  <text x="32" y="110" class="body">Agents write the code.</text>
+  <text x="32" y="126" class="muted">Claude Code, Copilot, often from</text>
+  <text x="32" y="140" class="muted">a phone. A different answer</text>
+  <text x="32" y="154" class="muted">every time you ask, which is</text>
+  <text x="32" y="168" class="muted">fine for writing and useless</text>
+  <text x="32" y="182" class="muted">for deciding what gets in.</text>
+
+  <!-- Gates -->
+  <rect x="250" y="70" width="230" height="160" rx="6" class="gate"/>
+  <rect x="250" y="70" width="230" height="20" rx="6" class="gateHead"/>
+  <text x="365" y="84" text-anchor="middle" class="pill">GATES · SLOPSTOPPER</text>
+  <text x="262" y="110" class="body">Twenty-five deterministic checks.</text>
+  <rect x="262" y="118" width="64" height="18" rx="3" class="loop"/><text x="294" y="130" text-anchor="middle" class="lbl" fill="rgb(34, 41, 57)">security</text>
+  <rect x="332" y="118" width="64" height="18" rx="3" class="loop"/><text x="364" y="130" text-anchor="middle" class="lbl" fill="rgb(34, 41, 57)">hygiene</text>
+  <rect x="402" y="118" width="66" height="18" rx="3" class="loop"/><text x="435" y="130" text-anchor="middle" class="lbl" fill="rgb(34, 41, 57)">reliability</text>
+  <text x="262" y="154" class="mono">task ss:&lt;check&gt;</text>
+  <text x="262" y="168" class="muted">same command, same pinned version,</text>
+  <text x="262" y="182" class="muted">on your laptop and in CI.</text>
+
+  <!-- What ships -->
+  <rect x="520" y="70" width="180" height="130" rx="6" class="ship"/>
+  <rect x="520" y="70" width="180" height="20" rx="6" class="shipHead"/>
+  <text x="610" y="84" text-anchor="middle" class="pill">WHAT SHIPS</text>
+  <text x="532" y="110" class="body">The PR merges.</text>
+  <text x="532" y="126" class="muted">Cloudflare deploys the preview</text>
+  <text x="532" y="140" class="muted">to production. I read the diffs</text>
+  <text x="532" y="154" class="muted">of what got through, not</text>
+  <text x="532" y="168" class="muted">everything that got written.</text>
+
+  <!-- flow arrows -->
+  <path d="M 210 135 L 249 135" class="flow" marker-end="url(#fGrey)"/>
+  <text x="229" y="128" text-anchor="middle" class="lbl" fill="rgb(96, 115, 159)">PRs</text>
+  <path d="M 480 135 L 519 135" class="flowGreen" marker-end="url(#fGreen)"/>
+  <text x="499" y="128" text-anchor="middle" class="lbl" fill="#1ea672">green</text>
+
+  <!-- exit code contract under the gates -->
+  <text x="262" y="204" class="exit" fill="#1ea672">0 clean</text>
+  <text x="310" y="204" class="exit" fill="#b54343">· 1 found</text>
+  <text x="370" y="204" class="exit" fill="#f0b04a">· 2 couldn't run</text>
+  <text x="262" y="219" class="muted">"Couldn't run" is never counted as a pass.</text>
+
+  <!-- Steward band -->
+  <rect x="20" y="256" width="680" height="56" rx="6" class="stew"/>
+  <rect x="20" y="256" width="680" height="18" rx="6" class="stewHead"/>
+  <text x="360" y="269" text-anchor="middle" class="pill">THE STEWARD · ORG-WIDE</text>
+  <text x="32" y="290" class="body">Keeps every repo on the current slopstopper, works the issues the gates raise, merges green Dependabot bumps. One PR each.</text>
+  <text x="32" y="305" class="muted">No check logic of its own. Code for the deterministic bits, a boxed agent for the two judgement calls, and the gates decide.</text>
+  <path d="M 365 256 L 365 233" class="flowPurple" marker-end="url(#fPurple)"/>
+  <text x="372" y="249" class="lbl" fill="#7350dc">keeps the gates current</text>
+</svg>
