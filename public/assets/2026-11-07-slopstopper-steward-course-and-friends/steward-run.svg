@@ -1,0 +1,136 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" role="img" aria-labelledby="stewardTitle stewardDesc">
+  <title id="stewardTitle">One steward run: code does the deterministic steps, the agent gets two judgement calls, the gates decide</title>
+  <desc id="stewardDesc">A left-to-right pipeline of seven steps in one steward run: discover, inventory, plan, execute, self-review, settle and report. Five steps are plain code boxes. Two steps, execute and settle, hand a judgement call to a boxed Claude Code agent shown beneath them: reading a refresh for moved knobs, and fixing a red check from its job log. Whatever the agent changes flows back up through a green gates band, the slopstopper checks run by the steward and then by the pull request's own CI, before anything is pushed or merged. A footer lists what the agent never gets: no token, no network, no vote on whether its own change passes.</desc>
+  <defs>
+    <style>
+      .h { font-family: 'Lora', Georgia, Cambria, serif; font-size: 14px; font-weight: 700; fill: rgb(34, 41, 57); }
+      .step { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 11px; font-weight: 700; fill: rgb(34, 41, 57); }
+      .body { font-family: 'Atkinson', system-ui, sans-serif; font-size: 10.5px; fill: rgb(96, 115, 159); }
+      .bodyDark { font-family: 'Atkinson', system-ui, sans-serif; font-size: 11px; fill: rgb(34, 41, 57); }
+      .pill { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; fill: #fff; }
+      .pillText { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; fill: rgb(34, 41, 57); }
+      .num { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10px; font-weight: 700; fill: #fff; }
+      .code { fill: #fff; stroke: rgb(229, 233, 240); stroke-width: 1.5; }
+      .codeHead { fill: rgb(96, 115, 159); }
+      .agentBox { fill: #fff; stroke: #2337ff; stroke-width: 1.5; }
+      .agentHead { fill: #2337ff; }
+      .gate { fill: rgb(216, 241, 225); stroke: #1ea672; stroke-width: 1.5; }
+      .flow { stroke: rgb(96, 115, 159); fill: none; stroke-width: 1.5; }
+      .toAgent { stroke: #2337ff; fill: none; stroke-width: 1.8; stroke-dasharray: 4 3; }
+      .toGate { stroke: #1ea672; fill: none; stroke-width: 1.8; }
+      .footer { fill: #0f1219; }
+      .footerText { font-family: 'JetBrains Mono', Menlo, Consolas, monospace; font-size: 10.5px; fill: rgb(214, 220, 235); }
+      .footerDim { font-family: 'Atkinson', system-ui, sans-serif; font-size: 10.5px; fill: rgb(140, 156, 188); }
+      .deny { fill: #b54343; }
+    </style>
+    <marker id="headGrey" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="rgb(96, 115, 159)"/></marker>
+    <marker id="headBlue" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#2337ff"/></marker>
+    <marker id="headGreen" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#1ea672"/></marker>
+  </defs>
+
+  <rect width="720" height="500" fill="#f8f9fb"/>
+  <text x="20" y="34" class="h">One steward run</text>
+  <text x="20" y="52" class="body">Grey boxes are code and give the same answer every time. Blue is the agent. Green is where the verdict lives.</text>
+
+  <!-- Row of seven steps -->
+  <!-- 1 discover -->
+  <rect x="20" y="76" width="88" height="86" rx="5" class="code"/>
+  <rect x="20" y="76" width="88" height="18" rx="5" class="codeHead"/>
+  <text x="64" y="89" text-anchor="middle" class="num">1 · CODE</text>
+  <text x="28" y="112" class="step">discover</text>
+  <text x="28" y="128" class="body">every repo in</text>
+  <text x="28" y="141" class="body">the org with</text>
+  <text x="28" y="154" class="body">the install marks</text>
+
+  <!-- 2 inventory -->
+  <rect x="118" y="76" width="88" height="86" rx="5" class="code"/>
+  <rect x="118" y="76" width="88" height="18" rx="5" class="codeHead"/>
+  <text x="162" y="89" text-anchor="middle" class="num">2 · CODE</text>
+  <text x="126" y="112" class="step">inventory</text>
+  <text x="126" y="128" class="body">the pin, suite</text>
+  <text x="126" y="141" class="body">version, issues,</text>
+  <text x="126" y="154" class="body">Dependabot PRs</text>
+
+  <!-- 3 plan -->
+  <rect x="216" y="76" width="88" height="86" rx="5" class="code"/>
+  <rect x="216" y="76" width="88" height="18" rx="5" class="codeHead"/>
+  <text x="260" y="89" text-anchor="middle" class="num">3 · CODE</text>
+  <text x="224" y="112" class="step">plan</text>
+  <text x="224" y="128" class="body">orders, in a</text>
+  <text x="224" y="141" class="body">budget: upgrade,</text>
+  <text x="224" y="154" class="body">refresh, triage</text>
+
+  <!-- 4 execute -->
+  <rect x="314" y="76" width="88" height="86" rx="5" class="agentBox"/>
+  <rect x="314" y="76" width="88" height="18" rx="5" class="agentHead"/>
+  <text x="358" y="89" text-anchor="middle" class="num">4 · CODE + AI</text>
+  <text x="322" y="112" class="step">execute</text>
+  <text x="322" y="128" class="body">fresh clone, the</text>
+  <text x="322" y="141" class="body">pin moved, the</text>
+  <text x="322" y="154" class="body">install run</text>
+
+  <!-- 5 self-review -->
+  <rect x="412" y="76" width="88" height="86" rx="5" class="agentBox"/>
+  <rect x="412" y="76" width="88" height="18" rx="5" class="agentHead"/>
+  <text x="456" y="89" text-anchor="middle" class="num">5 · AI</text>
+  <text x="420" y="112" class="step">self-review</text>
+  <text x="420" y="128" class="body">a second run,</text>
+  <text x="420" y="141" class="body">read only, with</text>
+  <text x="420" y="154" class="body">a verdict</text>
+
+  <!-- 6 settle -->
+  <rect x="510" y="76" width="88" height="86" rx="5" class="agentBox"/>
+  <rect x="510" y="76" width="88" height="18" rx="5" class="agentHead"/>
+  <text x="554" y="89" text-anchor="middle" class="num">6 · CODE + AI</text>
+  <text x="518" y="112" class="step">settle</text>
+  <text x="518" y="128" class="body">open the PR,</text>
+  <text x="518" y="141" class="body">wait on checks,</text>
+  <text x="518" y="154" class="body">fix or draft</text>
+
+  <!-- 7 report -->
+  <rect x="608" y="76" width="92" height="86" rx="5" class="code"/>
+  <rect x="608" y="76" width="92" height="18" rx="5" class="codeHead"/>
+  <text x="654" y="89" text-anchor="middle" class="num">7 · CODE</text>
+  <text x="616" y="112" class="step">report</text>
+  <text x="616" y="128" class="body">every order's</text>
+  <text x="616" y="141" class="body">outcome, and</text>
+  <text x="616" y="154" class="body">the agent's bill</text>
+
+  <!-- flow arrows between steps -->
+  <path d="M 108 119 L 117 119" class="flow" marker-end="url(#headGrey)"/>
+  <path d="M 206 119 L 215 119" class="flow" marker-end="url(#headGrey)"/>
+  <path d="M 304 119 L 313 119" class="flow" marker-end="url(#headGrey)"/>
+  <path d="M 402 119 L 411 119" class="flow" marker-end="url(#headGrey)"/>
+  <path d="M 500 119 L 509 119" class="flow" marker-end="url(#headGrey)"/>
+  <path d="M 598 119 L 607 119" class="flow" marker-end="url(#headGrey)"/>
+
+  <!-- the two judgement calls handed to the agent -->
+  <path d="M 358 162 L 358 212" class="toAgent" marker-end="url(#headBlue)"/>
+  <path d="M 554 162 L 554 212" class="toAgent" marker-end="url(#headBlue)"/>
+  <text x="364" y="192" class="step" fill="#2337ff">read the refresh</text>
+  <text x="560" y="192" class="step" fill="#2337ff">fix a red check</text>
+
+  <!-- The boxed agent -->
+  <rect x="20" y="214" width="680" height="96" rx="6" class="agentBox"/>
+  <rect x="20" y="214" width="680" height="20" rx="6" class="agentHead"/>
+  <text x="360" y="228" text-anchor="middle" class="pill">CLAUDE CODE · HEADLESS · IN A BOX</text>
+  <text x="32" y="252" class="bodyDark">Two jobs only: did a knob move or a workaround's upstream issue close, and what fixes this red line.</text>
+  <text x="32" y="268" class="bodyDark">It gets the repo's own slopstopper skills, the install diff, the release notes and the job log tail.</text>
+  <text x="32" y="284" class="body">Own OS user · own copy of the clone · no token · no network · tool allow-list from the pinned CLI · dollar cap · turn cap</text>
+  <text x="32" y="300" class="body">Never pushes. Never votes on whether its own change passes.</text>
+
+  <!-- back up through the gates -->
+  <path d="M 360 310 L 360 344" class="toGate" marker-end="url(#headGreen)"/>
+  <text x="368" y="332" class="step" fill="#1ea672">whatever it changed</text>
+
+  <!-- Gates band -->
+  <rect x="20" y="346" width="680" height="64" rx="6" class="gate"/>
+  <text x="360" y="368" text-anchor="middle" class="h">The gates decide</text>
+  <text x="360" y="386" text-anchor="middle" class="bodyDark">The steward runs the pinned CLI's checks on the clone; the PR's own ss-* workflows run the rest against the preview.</text>
+  <text x="360" y="401" text-anchor="middle" class="body">Green: ready. Red after two fix rounds, or an unsettled review: the PR opens as a draft that says why.</text>
+
+  <!-- Footer: exit code contract -->
+  <rect x="20" y="424" width="680" height="56" rx="6" class="footer"/>
+  <text x="34" y="446" class="footerText">exit 0  ran clean   ·   exit 1  found something   ·   exit 2  could not run</text>
+  <text x="34" y="466" class="footerDim">Every check keeps this contract, so "could not run" is never waved through. Same command locally and in CI: task ss:&lt;check&gt;</text>
+</svg>

@@ -14,16 +14,7 @@ image:
   path: /assets/2026-11-07-slopstopper-steward-course-and-friends/link.png
 ---
 
-<!--
-Optional screenshots (public/assets/2026-11-07-slopstopper-steward-course-and-friends/):
-  pr-summary.png             the single "SlopStopper: all N checks passed" comment on a PR
-  learn.png                  slopstopper.dev/learn
-  steward-pr.png             the body of apic#169
-  steward-report.png         the Orders table from a Steward · Run job summary
-  dependabot-comment.png     the steward's comment on a Dependabot PR
--->
-
-Back in [June](/blog/2026-06-21-slopstopper-cli-and-tooling/) I installed [slopstopper](https://slopstopper.dev) on this site and wrote up the seven things it found. Five months on there are twenty-five checks, a profile picks which ones a repo gets, there's a course that teaches each check on a deliberately broken demo, and there's a second tool, the [steward](https://github.com/hungovercoders/slopstopper-steward), that keeps every repo in my org on the current version and works the issues the checks raise.
+I wanted [slopstopper](https://slopstopper.dev) to stop being a thing I remember to run and start being a thing that runs, on every repo I've got, without me being the one holding the list. Back in [June](/blog/2026-06-21-slopstopper-cli-and-tooling/) I installed it on this site and wrote up the seven things it found. Five months on there are twenty-five checks, a profile picks which ones a repo gets, there's a course that teaches each check on a deliberately broken demo, and there's a second tool, the [steward](https://github.com/hungovercoders/slopstopper-steward), that keeps every repo in my org on the current version and works the issues the checks raise. Read on fellow hungovercoder, this one is mostly about the robot that does the rounds.
 
 I've also got a clearer idea of what slopstopper is actually for. I barely write code by hand now. Agents write it, often from my phone, and the output looks more like a factory than a workshop: prompts in, pull requests out. A factory needs inspection, and the inspection has to be deterministic or it's just another opinion. That's the job slopstopper does.
 
@@ -43,6 +34,14 @@ Get those right and you can let the generators loose. The agent writes it, the g
 ## Still one tap
 
 The model hasn't changed. Every check is `task ss:<category>:<check>`, locally and in CI, with the `slopstopper-cli` version pinned in `mise.toml`. Workflows are eight lines: set up the toolchain, run the check, post the result. Red in CI means the same red on your laptop, pointing at the same report under `.ss/reports/`.
+
+This is the whole loop in one sitting, recorded with [vhs](https://github.com/charmbracelet/vhs) from the tapes slopstopper keeps in its own repo: a green check, a change that blows its budget, the red line and the report it points at, and the fix.
+
+<video autoplay loop muted playsinline>
+  <source src="/assets/2026-11-07-slopstopper-steward-course-and-friends/triage.mp4" type="video/mp4">
+  <source src="/assets/2026-11-07-slopstopper-steward-course-and-friends/triage.webm" type="video/webm">
+  <img src="/assets/2026-11-07-slopstopper-steward-course-and-friends/triage.gif" alt="The triage loop in a terminal: task ss:hygiene:entry-files passes, a routing table is pasted into README.md, the same check fails naming the file and its token budget, the report under .ss/reports is read, the change is reverted and the check passes again">
+</video>
 
 ## What's on tap now
 
@@ -71,13 +70,15 @@ curl -fsSL https://raw.githubusercontent.com/hungovercoders/slopstopper/main/ins
 
 `slopstopper profile show` tells you which profile a repo is on and which workflows it's deliberately not carrying, which matters because a missing workflow used to look like a broken install.
 
+![slopstopper profile detect suggests ui because it found app/feedback.html, and profile show lists the four API workflows the ui profile deliberately leaves out](/assets/2026-11-07-slopstopper-steward-course-and-friends/profile.png)
+
 ## One comment, not twenty
 
-Twenty-five workflows each posting a comment is a PR nobody reads. Each check now posts only while it's red and deletes its comment when it passes, and one summary comment per PR says where everything stands:
+Twenty-five workflows each posting a comment is a PR nobody reads. Each check now posts only while it's red and deletes its comment when it passes, and one summary comment per PR says where everything stands. This is the one on the PR that moved this site to 0.29.0 this week:
 
-> ✅ SlopStopper: all 20 checks passed
+![The single SlopStopper summary comment on this site's pull request 83: all 20 checks passed, listed by loop, with the head commit and the time it was last updated](/assets/2026-11-07-slopstopper-steward-course-and-friends/pr-summary.png)
 
-A green PR has that line and nothing else. The first time I saw one I assumed the install had broken.
+A green PR has that line and nothing else, which reads like a broken install until you're used to it.
 
 ## Learn it on a slopped repo
 
@@ -88,9 +89,17 @@ pipx install slopstopper-cli
 slopstopper demo        # writes slopstopper-demo/, a two-page status page called Lantern
 ```
 
+<video autoplay loop muted playsinline>
+  <source src="/assets/2026-11-07-slopstopper-steward-course-and-friends/demo.mp4" type="video/mp4">
+  <source src="/assets/2026-11-07-slopstopper-steward-course-and-friends/demo.webm" type="video/webm">
+  <img src="/assets/2026-11-07-slopstopper-steward-course-and-friends/demo.gif" alt="slopstopper demo writing twenty-three files to slopstopper-demo and listing the ten checks that fail on it on purpose, each with the command to run and the finding it will report">
+</video>
+
 Lantern is laid out the way the suite expects and carries one finding per check: a complexity hotspot, a doc over budget, a missing header, a vulnerable pin. The one thing it doesn't carry is a secret, because a realistic-looking key in a public repo gets found by every scanner on the internet and reported to the vendor. That lesson writes its own fake one.
 
 On top of the demo is [From zero to slopstopper](https://slopstopper.dev/learn): twenty-one short lessons, each with a YouTube episode to come. Lesson 0 is what slop is. Lessons 2 to 16 take one check each: what it stops, the tool behind it, what it looks like firing on Lantern, the fix, a checkpoint and an exercise. Lessons 1, 17, 18 and 19 cover the installer, the workflows, the Claude Code skills and profiles. Lesson 20 has you add a check to the CLI and lets the test suite tell you every surface you forgot.
+
+![The From zero to slopstopper course page on slopstopper.dev: twenty-one short lessons, what you will need, and the four commands that install the CLI and write the Lantern demo repo](/assets/2026-11-07-slopstopper-steward-course-and-friends/learn.png)
 
 Every command in every lesson runs in CI, after lesson 4's commands rotted while I was writing lesson 5.
 
@@ -102,11 +111,15 @@ The change is that they ship with the CLI now. An upgrade refreshes the skills f
 
 ## The steward
 
-Slopstopper is per-repo, and I've got it on five repos. Every release meant five pin bumps, five refreshes and five reads of the release notes. Every red check on main meant an issue in five places. Every Dependabot PR was a green tick waiting for me to press merge.
+Slopstopper is per-repo, and I've got it on a handful of repos now. Every release meant a pin bump, a refresh and a read of the release notes in each one. Every red check on main meant an issue in each one. Every Dependabot PR was a green tick waiting for me to press merge.
 
 [slopstopper-steward](https://github.com/hungovercoders/slopstopper-steward) does that round for the whole org. It has no check logic and no fix knowledge of its own. Slopstopper decides what's wrong in one repo and ships how to fix it; the steward decides which repos need a hand and points slopstopper's own tooling at them.
 
-Its first rule is the factory rule: deterministic where possible, agent only for judgement. Discovery, the pin move, the install, the lockfile, verification, the CI wait and the merge are code. The agent gets involved twice, when a refresh needs reading (did a knob move, is a workaround's upstream issue closed) and when a red check needs a fix, and whatever it does goes back through the gates before anything is pushed. A run:
+Its first rule is the factory rule: deterministic where possible, agent only for judgement. Discovery, the pin move, the install, the lockfile, verification, the CI wait and the merge are code. The agent gets involved twice, when a refresh needs reading (did a knob move, is a workaround's upstream issue closed) and when a red check needs a fix, and whatever it does goes back through the gates before anything is pushed.
+
+![One steward run as a pipeline of seven steps: discover, inventory, plan, execute, self-review, settle and report. Five are plain code. Execute and settle hand two judgement calls, reading a refresh and fixing a red check, to a boxed Claude Code agent with its own OS user, no token and no network. Whatever it changes goes back up through the gates, the pinned CLI's checks and then the pull request's own CI, before anything is pushed](/assets/2026-11-07-slopstopper-steward-course-and-friends/steward-run.svg)
+
+A run, step by step:
 
 1. **Discover** every repo in the org with slopstopper installed, from the files the installer leaves behind.
 2. **Inventory** each one: the pin, the version that wrote the suite, the open slopstopper issues, open steward PRs, and Dependabot's open PRs.
@@ -127,6 +140,10 @@ The first run merged six Dependabot PRs across two repos in under five minutes a
 ### A reviewed upgrade
 
 When 0.29.0 shipped this week the steward moved three repos to it in one run. On apic the agent read the refresh, found no new knobs, and found the complexity check red on a function in the VS Code extension at CCN 32 against a ceiling of 30. It split the function, the self-review approved, the PR's forty-six checks went green, and the PR body says all of that with the model, the cost ($0.22 for the work, $0.08 for the review) and the one command the box refused. On the steward itself the agent changed nothing, which is also fine, and cost twelve cents.
+
+This site was the third. The agent read the refresh, found that the only schema change was a reworded comment, confirmed the install had left `package.json` alone, and said which checks it couldn't run itself and was leaving to the PR's own workflows. Twenty cents, eighteen turns, and nothing left for me to do but press merge.
+
+![This site's pull request 83, opened by the steward bot: the pin moved from 0.26.0 to 0.29.0, the agent's account of the refresh with the model, cost and turn count, the browser checks it left to the PR's own workflows, and the line saying all thirty checks are green](/assets/2026-11-07-slopstopper-steward-course-and-friends/steward-pr.png)
 
 The surfaces the steward reads from slopstopper are a written contract tested nightly against slopstopper's main, so a rename there goes red in the steward within a day rather than mid-run.
 
@@ -150,6 +167,19 @@ I'm not going to review every line an agent writes, and neither is anyone else. 
 
 The June caveats stand. Private repos will burn Actions minutes. Monorepos fight the defaults. And the steward's agent costs real money, small per PR, but a budget you set and a limit you'll hit.
 
-Next: the steward's own upgrade PRs still wait for me to merge, until I've read enough of its self-reviews to trust the switch. And twenty-one episodes to record.
+If I were doing this again I'd have pointed the steward at real repos a week earlier and written less of it first. None of the five things that went wrong lived in the checks, and no test I'd have thought to write was going to find a PAM session reading `/etc/environment`.
 
-Ideas and complaints to [slopstopper.dev/feedback](https://slopstopper.dev/feedback), as before.
+## Sources and further reading
+
+This post is the guided path. The references are these:
+
+- [slopstopper.dev](https://slopstopper.dev) for the install one-liner, the checks and the profiles, and [From zero to slopstopper](https://slopstopper.dev/learn) for the course.
+- The [slopstopper repo](https://github.com/hungovercoders/slopstopper) and its [changelog](https://github.com/hungovercoders/slopstopper/blob/main/CHANGELOG.md), where 0.26.0 to 0.29.0 is the stretch this post covers.
+- The [steward repo](https://github.com/hungovercoders/slopstopper-steward), and in particular its [architecture doc](https://github.com/hungovercoders/slopstopper-steward/blob/main/docs/architecture/README.md), which is where the box and the settle loop are specified properly.
+- [The June post](/blog/2026-06-21-slopstopper-cli-and-tooling/), for where this started.
+
+## What next
+
+The steward's own upgrade PRs still wait for me to merge, until I've read enough of its self-reviews to trust the switch. And there are twenty-one episodes to record, in between meals.
+
+Ideas and complaints to [slopstopper.dev/feedback](https://slopstopper.dev/feedback), as before. Watch this space, fellow hungovercoder, and may every PR you open this month have exactly one comment on it.

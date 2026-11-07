@@ -177,7 +177,8 @@ tbody tr:hover {
 table code {
 	font-size: 0.95em;
 }
-img {
+img,
+video {
 	max-width: 100%;
 	height: auto;
 	border-radius: 8px;
