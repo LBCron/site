@@ -1,8 +1,8 @@
 ---
-title: Doing the Rounds with a Slopstopper Steward
+title: Deterministic Gates for an AI Software Factory
 date: 2026-11-07
 author: dataGriff
-description: Slopstopper five months on, with twenty-five checks, a course on a slopped demo, and a steward that keeps every repo current without me remembering
+description: Agents write the code, slopstopper's twenty-five deterministic checks decide what ships, and a steward keeps those gates current on every repo. Five months on from the first install
 tags:
   - Slopstopper
   - Steward
@@ -14,7 +14,7 @@ image:
   path: /assets/2026-11-07-slopstopper-steward-course-and-friends/link.png
 ---
 
-I wanted [slopstopper](https://slopstopper.dev) to look after itself. It already does on this site. I wanted the same on every repo I've got, on the current version, without me being the one who remembers to bump a pin on a Sunday with a head on me. Back in [June](/blog/2026-06-21-slopstopper-cli-and-tooling/) I installed it here and wrote up the seven things it found. It's November now, there are twenty-five checks, there's a course, and there's a second tool called the [steward](https://github.com/hungovercoders/slopstopper-steward) that does the rounds of my repos so I don't have to. Read on fellow hungovercoder and meet the robot that nags the other robots.
+The idea in one line is deterministic gates on a software factory where agents write the code. [Slopstopper](https://slopstopper.dev) is the gates, and I wanted it to look after itself. It already does on this site. I wanted the same on every repo I've got, on the current version, without me being the one who remembers to bump a pin on a Sunday with a head on me. Back in [June](/blog/2026-06-21-slopstopper-cli-and-tooling/) I installed it here and wrote up the seven things it found. It's November now, there are twenty-five checks, there's a course, and there's a second tool called the [steward](https://github.com/hungovercoders/slopstopper-steward) that does the rounds of my repos so I don't have to. Read on fellow hungovercoder and meet the robot that nags the other robots.
 
 ## A Factory Needs Inspection
 
